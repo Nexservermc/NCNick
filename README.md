@@ -328,7 +328,7 @@ validation:
 
 | 项目 | 支持范围 |
 |---|---|
-| Minecraft | **1.8 - 1.21.11** |
+| Minecraft | **1.8+** |
 | 服务端 | Spigot / Paper 及其衍生核心 |
 | Java | 8 及以上 |
 | 编译目标 | Java 8（`source/target 1.8`） |
@@ -384,7 +384,3 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ```
 
 完整条款见仓库根目录的 [`LICENSE`](../LICENSE) 文件。
-
-> **使用 GPL-3.0 意味着**：任何人可以自由使用、修改、分发本插件，
-> 但**二次开发的衍生作品也必须以 GPL-3.0 开源**，且需保留版权声明。
-> 如果你希望允许闭源二次开发，需要考虑其他许可证。
