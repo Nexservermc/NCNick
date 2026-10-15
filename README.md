@@ -367,7 +367,7 @@ mvn clean package
 本项目采用 **GNU General Public License v3.0**（GPL-3.0）。
 
 ```
-Copyright (C) 2025 xiaotian_xt, Nice_Leo_
+Copyright (C) 2026 xiaotian_xt, Nice_Leo_
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
