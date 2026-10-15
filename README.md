@@ -4,7 +4,7 @@
 > 颜色通过图形界面所见即所得地选择，支持**纯色**与**双色渐变**。
 
 [![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/)
-[![Minecraft](https://img.shields.io/badge/Minecraft-1.8%20--%201.21.11-green.svg)](https://www.spigotmc.org/)
+[![Minecraft](https://img.shields.io/badge/Minecraft-1.8+-green.svg)](https://www.spigotmc.org/)
 [![Java](https://img.shields.io/badge/Java-8%2B-orange.svg)](https://adoptium.net/)
 [![Jar Size](https://img.shields.io/badge/jar-0.47%20MB-lightgrey.svg)](#)
 [![Platform](https://img.shields.io/badge/platform-Spigot%20%7C%20Paper-yellow.svg)](https://papermc.io/)
