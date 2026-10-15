@@ -1,0 +1,250 @@
+# ============================================================
+#  NCNick 語言文件 —— 繁體中文 (zh_TW)
+#
+#  說明：
+#    · 使用 & 作為顏色符號，支持 &0-&f、&k-&o 與 &#RRGGBB 真彩
+#    · {xxx} 為佔位變量，請勿隨意刪除，否則對應內容會顯示為空
+#    · 本文件可自由增刪條目；缺失的條目會自動回退到內置默認值
+#    · 修改後執行 /nca reload 即可生效（無需重啟服務器）
+# ============================================================
+
+# ---------- 通用 ----------
+prefix: "&7[&b暱稱&7]&r "
+
+# ---------- 聊天欄輸入引導 ----------
+# 玩家點擊「設定暱稱」後，在聊天欄輸入之前看到的引導文字。
+# 注意：這裡必須用 & 顏色代碼，插件會自動轉換為顏色。
+input:
+  nickname-prompt: "&e請在聊天欄輸入你的暱稱"
+  nickname-requirements: "&7要求：&f{min}-{max} &7個字元，全服唯一，不能含顏色代碼"
+  nickname-color-hint: "&7顏色請設定完暱稱後使用 &e/nc color &7選擇"
+  cancel-hint: "&7輸入 &ccancel &7取消"
+
+# ---------- 提示消息 ----------
+msg:
+  no-permission: "&c你沒有權限執行此操作！"
+  not-player: "&c該命令只能由玩家執行！"
+  player-not-found: "&c找不到玩家 &e{player}&c！"
+  player-offline: "&c玩家 &e{player}&c 當前不在線。"
+  reloaded: "&a配置與語言文件已重載完成。"
+  reload-failed: "&c重載失敗：&e{error}"
+  gui-error: "&c界面打開失敗，請稍後重試或聯繫管理員。"
+  unknown-command: "&c未知的子命令，請輸入 &e/{label} help &c查看幫助。"
+  debug-toggled: "&a調試模式已{state}。"
+
+# ---------- 暱稱校驗 ----------
+validate:
+  invalid-length: "&c暱稱長度需在 &e{min} &c- &e{max} &c個字符之間（當前 &e{length}&c）。"
+  invalid-char: "&c暱稱中含有不允許的字符：&e{chars}"
+  char-type-disabled: "&c暱稱中含有已禁用的字符類型：&e{types}"
+  empty: "&c暱稱不能為空！"
+  same-as-realname: "&c暱稱不能與你的真實 ID 相同！"
+  duplicate: "&c暱稱 &e{nickname} &c已被其他玩家使用，請換一個！（全服唯一）"
+  contains-color-code: "&c暱稱中不能包含顏色代碼，請使用顏色界面設置顏色。"
+  input-placeholder-error: "&c請先刪除輸入框中的提示文字，再輸入暱稱！"
+  blocked-word: "&c暱稱中包含被禁止的詞彙：&e{word}"
+  not-set: "&c你還沒有設置暱稱。"
+  target-not-set: "&c玩家 &e{player}&c 沒有設置暱稱。"
+
+# ---------- 購買與付費 ----------
+purchase:
+  set-success: "&a暱稱已成功設置為 &r{display}&a！"
+  free-success: "&a暱稱已成功設置為 &r{display}&a（權限免費）！"
+  buy-success: "&a已扣除 &e{price}&a，暱稱購買成功！"
+  not-enough-coins: "&c金幣不足！需要 &e{price} &c金幣，你當前只有 &e{balance}&c。"
+  not-enough-points: "&c點券不足！需要 &e{price} &c點券，你當前只有 &e{balance}&c。"
+  payment-failed: "&c扣費失敗，交易已取消，請稍後重試。"
+  no-economy: "&c服務器未安裝經濟插件！需要 Vault（金幣）或 PlayerPoints（點券）。"
+  mode-disabled: "&c暱稱購買功能當前未開放。"
+  currency-disabled: "&c該支付方式當前不可用，請選擇其他方式。"
+  cancelled: "&c已取消購買。"
+  confirm-title: "&e確認購買"
+  color-buy-success: "&a顏色 &r{color}&a 已應用到暱稱 &e{nickname}&a！"
+
+# ---------- 暱稱刪除 ----------
+remove:
+  success: "&a已清除你的暱稱。"
+  admin-success: "&a已清除玩家 &e{player}&a 的暱稱。"
+
+# ---------- 管理員 ----------
+admin:
+  set-success: "&a已将玩家 &e{player}&a 的暱稱設置為 &r{nickname}&a。"
+  set-color-success: "&a已将玩家 &e{player}&a 的暱稱顏色設置為 &r{color}&a。"
+  reset-color-success: "&a已重置玩家 &e{player}&a 的暱稱顏色。"
+  clear-success: "&a已清除玩家 &e{player}&a 的暱稱。"
+  info-header: "&6===== &b玩家 &e{player}&6 的暱稱信息 ====="
+  info-name: "&7真實 ID：&f{name}"
+  info-uuid: "&7UUID：&f{uuid}"
+  info-nickname: "&7暱稱：&r{nickname}"
+  info-color: "&7顏色：&r{color}"
+  info-mode: "&7來源：&f{mode}"
+  info-updated: "&7更新時間：&f{time}"
+  info-footer: "&6================================"
+  force-download-start: "&e開始下載數據庫驅動 &f{driver}&e，請稍候……"
+  force-download-ok: "&a驅動 &f{driver}&a 下載成功：&f{path}"
+  force-download-fail: "&c驅動 &f{driver}&c 下載失敗：&f{reason}"
+  force-download-all-ok: "&a全部驅動下載完成。"
+  debug-on: "&a已開啟調試模式。"
+  debug-off: "&c已關閉調試模式。"
+
+# ---------- 幫助 ----------
+help:
+  header: "&6======== &bNCNick 中文暱稱 &6========"
+  entry-open: "&e/nc &7- 打開暱稱主界面"
+  entry-set: "&e/nc set <暱稱> &7- 直接設置暱稱"
+  entry-color: "&e/nc color &7- 打開顏色設置界面"
+  entry-remove: "&e/nc remove &7- 清除自己的暱稱"
+  entry-info: "&e/nc info &7- 查看自己的暱稱信息"
+  entry-help: "&e/nc help &7- 查看幫助"
+  admin-header: "&6======== &bNCNick 管理員幫助 &6========"
+  admin-gui: "&e/nca &7- 打開玩家管理界面"
+  admin-set: "&e/nca set <玩家> <暱稱> &7- 設置指定玩家暱稱"
+  admin-color: "&e/nca color <玩家> <顏色> &7- 設置暱稱顏色（支持 &7&/&#RRGGBB&7）"
+  admin-resetcolor: "&e/nca resetcolor <玩家> &7- 重置暱稱顏色"
+  admin-clear: "&e/nca clear <玩家> &7- 清除指定玩家暱稱"
+  admin-info: "&e/nca info <玩家> &7- 查看玩家暱稱詳情"
+  admin-list: "&e/nca list [頁碼] &7- 列出所有已設置暱稱的玩家"
+  admin-driver: "&e/nca driver [status|download] &7- 數據庫驅動管理"
+  admin-debug: "&e/nca debug [on|off] &7- 切換調試模式"
+  admin-reload: "&e/nca reload &7- 重載配置與語言文件"
+  footer: "&6================================"
+
+# ---------- 顏色 GUI ----------
+color:
+  title-main: "&e暱稱顏色設置"
+  title-solid: "&e選擇纯色"
+  title-gradient-from: "&e渐變 - 選擇起始色"
+  title-gradient-to: "&e渐變 - 選擇結束色"
+  title-preview: "&e效果預覽"
+  item-solid: "&a纯色"
+  item-solid-lore:
+    - "&7為你的暱稱設置單一顏色"
+    - "&7共 &e{count} &7種顏色可選"
+  item-gradient: "&d渐變"
+  item-gradient-lore:
+    - "&7為你的暱稱設置双色渐變"
+    - "&7从起始色平滑過渡到結束色"
+  item-preview: "&e預覽效果"
+  item-preview-lore:
+    - "&7當前選擇：&r{color}"
+    - "&7點擊查看實际效果"
+  item-buy: "&a確認購買"
+  item-buy-lore:
+    - "&7價格：&e{price}"
+    - "&7餘額：&e{balance}"
+    - "&a點擊確認購買"
+  item-buy-lore-noperm:
+    - "&7價格：&e{price}"
+    - "&c餘額不足"
+  item-cancel: "&c取消"
+  item-back: "&e返回"
+  item-reset: "&c重置為默認顏色"
+  item-reset-lore:
+    - "&7移除暱稱上的自定義顏色"
+  selected-from: "&7起始色：&r{color}"
+  selected-to: "&7結束色：&r{color}"
+  hint-pick: "&7點擊選擇此顏色"
+  preview-name: "&f{name} &7| 實际效果见聊天栏"
+  preview-chat: "&a【預覽】&r你的暱稱将顯示為：&r{nickname}"
+  no-color-permission: "&c你沒有使用暱稱顏色的權限（需要 &e{permission}&c）。"
+  none: "&7默認（無顏色）"
+
+# ---------- 管理員 GUI ----------
+admin-gui:
+  title-main: "&c暱稱管理 - 玩家列表"
+  title-player: "&c管理玩家：{player}"
+  title-confirm: "&c確認操作"
+  item-player: "&f{player}"
+  item-player-lore:
+    - "&7暱稱：&r{nickname}"
+    - "&7顏色：&r{color}"
+    - "&7來源：&f{mode}"
+    - ""
+    - "&e點擊管理此玩家"
+  item-empty: "&7無"
+  item-set-name: "&a設置暱稱"
+  item-set-name-lore:
+    - "&7為玩家設置新的暱稱"
+    - "&7當前：&r{nickname}"
+  item-set-color: "&a設置顏色"
+  item-set-color-lore:
+    - "&7為玩家設置暱稱顏色"
+    - "&7當前：&r{color}"
+  item-reset-color: "&e重置顏色"
+  item-reset-color-lore:
+    - "&7移除該玩家的暱稱顏色"
+  item-clear: "&c清除暱稱"
+  item-clear-lore:
+    - "&7彻底刪除該玩家的暱稱數據"
+  item-prev: "&e上一頁"
+  item-next: "&e下一頁"
+  item-close: "&c關閉"
+  item-info: "&e玩家信息"
+  item-info-lore:
+    - "&7真實 ID：&f{name}"
+    - "&7UUID：&f{uuid}"
+    - "&7來源：&f{mode}"
+  item-refresh: "&a刷新列表"
+  item-search: "&e搜索玩家"
+  search-prompt: "&e請在聊天栏輸入要搜索的玩家名（輸入 cancel 取消）"
+  search-cancelled: "&c已取消搜索。"
+  search-no-result: "&c未找到匹配的玩家。"
+  confirm-clear: "&c確認清除 &e{player}&c 的暱稱？此操作不可撤銷！"
+  confirm-yes: "&a確認"
+  confirm-no: "&c取消"
+  action-done: "&a操作已完成。"
+  prompt-nickname: "&e請在聊天栏輸入新的暱稱（輸入 cancel 取消）"
+  prompt-color: "&e請在聊天栏輸入顏色代碼，如 &a&a&e / &6&c / &e&#FF5555 &7（輸入 cancel 取消）"
+  invalid-color: "&c顏色代碼無效！請輸入如 &a、&c 或 &#RRGGBB。"
+
+# ---------- 實驗性功能 ----------
+experimental:
+  disabled: "&7實驗性功能未啟用。"
+  tab-applied: "&7已接管原版 TAB 顯示。"
+  nametag-applied: "&7已接管原版頭頂顯示。"
+  chat-applied: "&7已接管原版聊天顯示。"
+  packetevents-missing: "&7未检测到 PacketEvents，已降級為纯 API 模式。"
+
+# ---------- 驅動下載 ----------
+driver:
+  downloading: "&e正在从 &f{source}&e 下載 &f{driver}&e……"
+  download-ok: "&a驅動 &f{driver}&a 下載成功。"
+  download-retry: "&e下載源 &f{source}&e 失敗（{reason}），正在切換到下一個源……"
+  download-fail: "&c驅動 &f{driver}&c 全部下載源均失敗，數據庫功能不可用。"
+  loaded: "&a驅動已加載：&f{driver}"
+  load-fail: "&c驅動加載失敗：&f{driver}&c —— {reason}"
+  no-driver: "&c未找到數據庫驅動，且自動下載失敗。請手動下載 &f{driver}&c 放入 &f{path}&c。"
+  status-header: "&6===== 數據庫驅動狀態 ====="
+  status-entry: "&7{driver}：&f{state} &7({path})"
+  state-ok: "&a已就緒"
+  state-missing: "&c缺失"
+
+# ---------- 支付方式選擇 ----------
+pay:
+  title: "&8選擇支付方式"
+  item-free: "&a免費設定"
+  item-free-lore:
+    - "&7你擁有權限 &e{permission}"
+    - "&a可以免費設定此暱稱"
+    - ""
+    - "&a點擊免費設定"
+  item-coins: "&6用金幣購買 &7(預設)"
+  item-coins-lore:
+    - "&7價格：&e{price} &7金幣"
+    - "&7餘額：&e{balance} &7金幣"
+    - ""
+    - "{action}"
+  item-points: "&a用點券購買"
+  item-points-lore:
+    - "&7價格：&e{price} &7點券"
+    - "&7餘額：&e{balance} &7點券"
+    - ""
+    - "{action}"
+  action-buy: "&a點擊購買"
+  action-insufficient: "&c餘額不足"
+  item-info: "&e{name}"
+  item-info-lore:
+    - "&7暱稱：&f{nickname}"
+    - ""
+    - "&7請選擇支付方式"
+  item-cancel: "&c取消"

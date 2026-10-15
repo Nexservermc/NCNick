@@ -1,0 +1,40 @@
+name: NCNick
+version: 2.0.0
+main: com.ncnick.NCNick
+# 注意：刻意不声明 api-version。
+# 声明 api-version: 1.13 会导致 1.8 - 1.12 服务端直接拒绝加载本插件；
+# 省略该字段时，Bukkit 按 legacy 方式加载，1.8 - 1.21.11 全版本均可运行。
+authors: [xiaotian_xt, Nice_Leo_]
+description: 中文昵称插件 —— 简繁中文昵称、双占位符、颜色 GUI、全服唯一、MySQL 跨服同步
+website: ""
+softdepend: [Vault, PlayerPoints, PlaceholderAPI, PacketEvents, TAB, ProtocolLib]
+
+commands:
+  nc:
+    description: NCNick 玩家命令
+    usage: /nc help
+    aliases: [ncnick, nickname, nick]
+  nca:
+    description: NCNick 管理员命令
+    usage: /nca help
+    aliases: [ncnickadmin]
+    permission: ncnick.admin
+    permission-message: "§c你没有权限执行此命令。"
+
+permissions:
+  ncnick.use:
+    description: 允许使用昵称功能
+    default: true
+  ncnick.remove:
+    description: 允许清除自己的昵称
+    default: true
+  ncnick.color:
+    description: 允许为昵称设置自定义颜色
+    default: true
+  ncnick.admin:
+    description: 管理员权限（管理界面与全部管理命令）
+    default: op
+    children:
+      ncnick.use: true
+      ncnick.remove: true
+      ncnick.color: true

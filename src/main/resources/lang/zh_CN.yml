@@ -1,0 +1,250 @@
+# ============================================================
+#  NCNick 语言文件 —— 简体中文 (zh_CN)
+#
+#  说明：
+#    · 使用 & 作为颜色符号，支持 &0-&f、&k-&o 与 &#RRGGBB 真彩
+#    · {xxx} 为占位变量，请勿随意删除，否则对应内容会显示为空
+#    · 本文件可自由增删条目；缺失的条目会自动回退到内置默认值
+#    · 修改后执行 /nca reload 即可生效（无需重启服务器）
+# ============================================================
+
+# ---------- 通用 ----------
+prefix: "&7[&b昵称&7]&r "
+
+# ---------- 聊天栏输入引导 ----------
+# 玩家点击"设置昵称"后，在聊天栏输入之前看到的引导文字。
+# 注意：这里必须用 & 颜色代码，插件会自动转换为颜色。
+input:
+  nickname-prompt: "&e请在聊天栏输入你的昵称"
+  nickname-requirements: "&7要求：&f{min}-{max} &7个字符，全服唯一，不能含颜色代码"
+  nickname-color-hint: "&7颜色请设置完昵称后使用 &e/nc color &7选择"
+  cancel-hint: "&7输入 &ccancel &7取消"
+
+# ---------- 提示消息 ----------
+msg:
+  no-permission: "&c你没有权限执行此操作！"
+  not-player: "&c该命令只能由玩家执行！"
+  player-not-found: "&c找不到玩家 &e{player}&c！"
+  player-offline: "&c玩家 &e{player}&c 当前不在线。"
+  reloaded: "&a配置与语言文件已重载完成。"
+  reload-failed: "&c重载失败：&e{error}"
+  gui-error: "&c界面打开失败，请稍后重试或联系管理员。"
+  unknown-command: "&c未知的子命令，请输入 &e/{label} help &c查看帮助。"
+  debug-toggled: "&a调试模式已{state}。"
+
+# ---------- 昵称校验 ----------
+validate:
+  invalid-length: "&c昵称长度需在 &e{min} &c- &e{max} &c个字符之间（当前 &e{length}&c）。"
+  invalid-char: "&c昵称中含有不允许的字符：&e{chars}"
+  char-type-disabled: "&c昵称中含有已禁用的字符类型：&e{types}"
+  empty: "&c昵称不能为空！"
+  same-as-realname: "&c昵称不能与你的真实 ID 相同！"
+  duplicate: "&c昵称 &e{nickname} &c已被其他玩家使用，请换一个！（全服唯一）"
+  contains-color-code: "&c昵称中不能包含颜色代码，请使用颜色界面设置颜色。"
+  input-placeholder-error: "&c请先删除输入框中的提示文字，再输入昵称！"
+  blocked-word: "&c昵称中包含被禁止的词汇：&e{word}"
+  not-set: "&c你还没有设置昵称。"
+  target-not-set: "&c玩家 &e{player}&c 没有设置昵称。"
+
+# ---------- 购买与付费 ----------
+purchase:
+  set-success: "&a昵称已成功设置为 &r{display}&a！"
+  free-success: "&a昵称已成功设置为 &r{display}&a（权限免费）！"
+  buy-success: "&a已扣除 &e{price}&a，昵称购买成功！"
+  not-enough-coins: "&c金币不足！需要 &e{price} &c金币，你当前只有 &e{balance}&c。"
+  not-enough-points: "&c点券不足！需要 &e{price} &c点券，你当前只有 &e{balance}&c。"
+  payment-failed: "&c扣费失败，交易已取消，请稍后重试。"
+  no-economy: "&c服务器未安装经济插件！需要 Vault（金币）或 PlayerPoints（点券）。"
+  mode-disabled: "&c昵称购买功能当前未开放。"
+  currency-disabled: "&c该支付方式当前不可用，请选择其他方式。"
+  cancelled: "&c已取消购买。"
+  confirm-title: "&e确认购买"
+  color-buy-success: "&a颜色 &r{color}&a 已应用到昵称 &e{nickname}&a！"
+
+# ---------- 昵称删除 ----------
+remove:
+  success: "&a已清除你的昵称。"
+  admin-success: "&a已清除玩家 &e{player}&a 的昵称。"
+
+# ---------- 管理员 ----------
+admin:
+  set-success: "&a已将玩家 &e{player}&a 的昵称设置为 &r{nickname}&a。"
+  set-color-success: "&a已将玩家 &e{player}&a 的昵称颜色设置为 &r{color}&a。"
+  reset-color-success: "&a已重置玩家 &e{player}&a 的昵称颜色。"
+  clear-success: "&a已清除玩家 &e{player}&a 的昵称。"
+  info-header: "&6===== &b玩家 &e{player}&6 的昵称信息 ====="
+  info-name: "&7真实 ID：&f{name}"
+  info-uuid: "&7UUID：&f{uuid}"
+  info-nickname: "&7昵称：&r{nickname}"
+  info-color: "&7颜色：&r{color}"
+  info-mode: "&7来源：&f{mode}"
+  info-updated: "&7更新时间：&f{time}"
+  info-footer: "&6================================"
+  force-download-start: "&e开始下载数据库驱动 &f{driver}&e，请稍候……"
+  force-download-ok: "&a驱动 &f{driver}&a 下载成功：&f{path}"
+  force-download-fail: "&c驱动 &f{driver}&c 下载失败：&f{reason}"
+  force-download-all-ok: "&a全部驱动下载完成。"
+  debug-on: "&a已开启调试模式。"
+  debug-off: "&c已关闭调试模式。"
+
+# ---------- 帮助 ----------
+help:
+  header: "&6======== &bNCNick 中文昵称 &6========"
+  entry-open: "&e/nc &7- 打开昵称主界面"
+  entry-set: "&e/nc set <昵称> &7- 直接设置昵称"
+  entry-color: "&e/nc color &7- 打开颜色设置界面"
+  entry-remove: "&e/nc remove &7- 清除自己的昵称"
+  entry-info: "&e/nc info &7- 查看自己的昵称信息"
+  entry-help: "&e/nc help &7- 查看帮助"
+  admin-header: "&6======== &bNCNick 管理员帮助 &6========"
+  admin-gui: "&e/nca &7- 打开玩家管理界面"
+  admin-set: "&e/nca set <玩家> <昵称> &7- 设置指定玩家昵称"
+  admin-color: "&e/nca color <玩家> <颜色> &7- 设置昵称颜色（支持 &7&/&#RRGGBB&7）"
+  admin-resetcolor: "&e/nca resetcolor <玩家> &7- 重置昵称颜色"
+  admin-clear: "&e/nca clear <玩家> &7- 清除指定玩家昵称"
+  admin-info: "&e/nca info <玩家> &7- 查看玩家昵称详情"
+  admin-list: "&e/nca list [页码] &7- 列出所有已设置昵称的玩家"
+  admin-driver: "&e/nca driver [status|download] &7- 数据库驱动管理"
+  admin-debug: "&e/nca debug [on|off] &7- 切换调试模式"
+  admin-reload: "&e/nca reload &7- 重载配置与语言文件"
+  footer: "&6================================"
+
+# ---------- 颜色 GUI ----------
+color:
+  title-main: "&e昵称颜色设置"
+  title-solid: "&e选择纯色"
+  title-gradient-from: "&e渐变 - 选择起始色"
+  title-gradient-to: "&e渐变 - 选择结束色"
+  title-preview: "&e效果预览"
+  item-solid: "&a纯色"
+  item-solid-lore:
+    - "&7为你的昵称设置单一颜色"
+    - "&7共 &e{count} &7种颜色可选"
+  item-gradient: "&d渐变"
+  item-gradient-lore:
+    - "&7为你的昵称设置双色渐变"
+    - "&7从起始色平滑过渡到结束色"
+  item-preview: "&e预览效果"
+  item-preview-lore:
+    - "&7当前选择：&r{color}"
+    - "&7点击查看实际效果"
+  item-buy: "&a确认购买"
+  item-buy-lore:
+    - "&7价格：&e{price}"
+    - "&7余额：&e{balance}"
+    - "&a点击确认购买"
+  item-buy-lore-noperm:
+    - "&7价格：&e{price}"
+    - "&c余额不足"
+  item-cancel: "&c取消"
+  item-back: "&e返回"
+  item-reset: "&c重置为默认颜色"
+  item-reset-lore:
+    - "&7移除昵称上的自定义颜色"
+  selected-from: "&7起始色：&r{color}"
+  selected-to: "&7结束色：&r{color}"
+  hint-pick: "&7点击选择此颜色"
+  preview-name: "&f{name} &7| 实际效果见聊天栏"
+  preview-chat: "&a【预览】&r你的昵称将显示为：&r{nickname}"
+  no-color-permission: "&c你没有使用昵称颜色的权限（需要 &e{permission}&c）。"
+  none: "&7默认（无颜色）"
+
+# ---------- 管理员 GUI ----------
+admin-gui:
+  title-main: "&c昵称管理 - 玩家列表"
+  title-player: "&c管理玩家：{player}"
+  title-confirm: "&c确认操作"
+  item-player: "&f{player}"
+  item-player-lore:
+    - "&7昵称：&r{nickname}"
+    - "&7颜色：&r{color}"
+    - "&7来源：&f{mode}"
+    - ""
+    - "&e点击管理此玩家"
+  item-empty: "&7无"
+  item-set-name: "&a设置昵称"
+  item-set-name-lore:
+    - "&7为玩家设置新的昵称"
+    - "&7当前：&r{nickname}"
+  item-set-color: "&a设置颜色"
+  item-set-color-lore:
+    - "&7为玩家设置昵称颜色"
+    - "&7当前：&r{color}"
+  item-reset-color: "&e重置颜色"
+  item-reset-color-lore:
+    - "&7移除该玩家的昵称颜色"
+  item-clear: "&c清除昵称"
+  item-clear-lore:
+    - "&7彻底删除该玩家的昵称数据"
+  item-prev: "&e上一页"
+  item-next: "&e下一页"
+  item-close: "&c关闭"
+  item-info: "&e玩家信息"
+  item-info-lore:
+    - "&7真实 ID：&f{name}"
+    - "&7UUID：&f{uuid}"
+    - "&7来源：&f{mode}"
+  item-refresh: "&a刷新列表"
+  item-search: "&e搜索玩家"
+  search-prompt: "&e请在聊天栏输入要搜索的玩家名（输入 cancel 取消）"
+  search-cancelled: "&c已取消搜索。"
+  search-no-result: "&c未找到匹配的玩家。"
+  confirm-clear: "&c确认清除 &e{player}&c 的昵称？此操作不可撤销！"
+  confirm-yes: "&a确认"
+  confirm-no: "&c取消"
+  action-done: "&a操作已完成。"
+  prompt-nickname: "&e请在聊天栏输入新的昵称（输入 cancel 取消）"
+  prompt-color: "&e请在聊天栏输入颜色代码，如 &a&a&e / &6&c / &e&#FF5555 &7（输入 cancel 取消）"
+  invalid-color: "&c颜色代码无效！请输入如 &a、&c 或 &#RRGGBB。"
+
+# ---------- 实验性功能 ----------
+experimental:
+  disabled: "&7实验性功能未启用。"
+  tab-applied: "&7已接管原版 TAB 显示。"
+  nametag-applied: "&7已接管原版头顶显示。"
+  chat-applied: "&7已接管原版聊天显示。"
+  packetevents-missing: "&7未检测到 PacketEvents，已降级为纯 API 模式。"
+
+# ---------- 驱动下载 ----------
+driver:
+  downloading: "&e正在从 &f{source}&e 下载 &f{driver}&e……"
+  download-ok: "&a驱动 &f{driver}&a 下载成功。"
+  download-retry: "&e下载源 &f{source}&e 失败（{reason}），正在切换到下一个源……"
+  download-fail: "&c驱动 &f{driver}&c 全部下载源均失败，数据库功能不可用。"
+  loaded: "&a驱动已加载：&f{driver}"
+  load-fail: "&c驱动加载失败：&f{driver}&c —— {reason}"
+  no-driver: "&c未找到数据库驱动，且自动下载失败。请手动下载 &f{driver}&c 放入 &f{path}&c。"
+  status-header: "&6===== 数据库驱动状态 ====="
+  status-entry: "&7{driver}：&f{state} &7({path})"
+  state-ok: "&a已就绪"
+  state-missing: "&c缺失"
+
+# ---------- 支付方式选择 ----------
+pay:
+  title: "&8选择支付方式"
+  item-free: "&a免费设置"
+  item-free-lore:
+    - "&7你拥有权限 &e{permission}"
+    - "&a可以免费设置此昵称"
+    - ""
+    - "&a点击免费设置"
+  item-coins: "&6用金币购买 &7(默认)"
+  item-coins-lore:
+    - "&7价格：&e{price} &7金币"
+    - "&7余额：&e{balance} &7金币"
+    - ""
+    - "{action}"
+  item-points: "&a用点券购买"
+  item-points-lore:
+    - "&7价格：&e{price} &7点券"
+    - "&7余额：&e{balance} &7点券"
+    - ""
+    - "{action}"
+  action-buy: "&a点击购买"
+  action-insufficient: "&c余额不足"
+  item-info: "&e{name}"
+  item-info-lore:
+    - "&7昵称：&f{nickname}"
+    - ""
+    - "&7请选择支付方式"
+  item-cancel: "&c取消"

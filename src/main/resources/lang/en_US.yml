@@ -1,0 +1,251 @@
+# ============================================================
+#  NCNick Language File —— English (en_US)
+#
+#  Notes:
+#    · & is the color code prefix; supports &0-&f, &k-&o and &#RRGGBB
+#    · {xxx} are placeholders — do not remove them
+#    · Entries may be added or removed freely; missing keys fall back
+#      to the plugin's built-in defaults
+#    · Run /nca reload to apply changes (no server restart needed)
+# ============================================================
+
+# ---------- General ----------
+prefix: "&7[&bNick&7]&r "
+
+# ---------- Chat input guidance ----------
+# Shown before the player types their nickname in chat.
+# Note: & colour codes are required here; the plugin converts them automatically.
+input:
+  nickname-prompt: "&ePlease type your nickname in chat"
+  nickname-requirements: "&7Requirements: &f{min}-{max} &7characters, globally unique, no colour codes"
+  nickname-color-hint: "&7Set the colour afterwards with &e/nc color"
+  cancel-hint: "&7Type &ccancel &7to abort"
+
+# ---------- Messages ----------
+msg:
+  no-permission: "&cYou do not have permission to do that!"
+  not-player: "&cThis command can only be run by a player!"
+  player-not-found: "&cPlayer &e{player}&c not found!"
+  player-offline: "&cPlayer &e{player}&c is not online."
+  reloaded: "&aConfiguration and language files reloaded."
+  reload-failed: "&cReload failed: &e{error}"
+  gui-error: "&cFailed to open the interface. Please try again later."
+  unknown-command: "&cUnknown subcommand. Use &e/{label} help &cfor help."
+  debug-toggled: "&aDebug mode {state}."
+
+# ---------- Validation ----------
+validate:
+  invalid-length: "&cNickname must be &e{min} &cto &e{max} &ccharacters long (currently &e{length}&c)."
+  invalid-char: "&cNickname contains disallowed characters: &e{chars}"
+  char-type-disabled: "&cNickname contains a disabled character type: &e{types}"
+  empty: "&cNickname cannot be empty!"
+  same-as-realname: "&cNickname cannot be the same as your real ID!"
+  duplicate: "&cNickname &e{nickname} &cis already taken by another player! (server-wide unique)"
+  contains-color-code: "&cNicknames cannot contain color codes. Please use the color menu."
+  input-placeholder-error: "&cPlease delete the placeholder text before typing your nickname!"
+  blocked-word: "&cNickname contains a blocked word: &e{word}"
+  not-set: "&cYou have not set a nickname yet."
+  target-not-set: "&cPlayer &e{player}&c has not set a nickname."
+
+# ---------- Purchase ----------
+purchase:
+  set-success: "&aNickname set to &r{display}&a!"
+  free-success: "&aNickname set to &r{display}&a (free via permission)!"
+  buy-success: "&aCharged &e{price}&a. Purchase successful!"
+  not-enough-coins: "&cNot enough coins! Need &e{price} &cbut you only have &e{balance}&c."
+  not-enough-points: "&cNot enough points! Need &e{price} &cbut you only have &e{balance}&c."
+  payment-failed: "&cPayment failed. The transaction has been cancelled."
+  no-economy: "&cNo economy plugin found! Vault (coins) or PlayerPoints (points) is required."
+  mode-disabled: "&cNickname purchases are currently disabled."
+  currency-disabled: "&cThat payment method is unavailable. Please choose another one."
+  cancelled: "&cPurchase cancelled."
+  confirm-title: "&eConfirm Purchase"
+  color-buy-success: "&aColor &r{color}&a applied to nickname &e{nickname}&a!"
+
+# ---------- Removal ----------
+remove:
+  success: "&aYour nickname has been cleared."
+  admin-success: "&aCleared the nickname of &e{player}&a."
+
+# ---------- Admin ----------
+admin:
+  set-success: "&aSet &e{player}&a's nickname to &r{nickname}&a."
+  set-color-success: "&aSet &e{player}&a's nickname color to &r{color}&a."
+  reset-color-success: "&aReset &e{player}&a's nickname color."
+  clear-success: "&aCleared &e{player}&a's nickname."
+  info-header: "&6===== &bNickname info for &e{player}&6 ====="
+  info-name: "&7Real ID: &f{name}"
+  info-uuid: "&7UUID: &f{uuid}"
+  info-nickname: "&7Nickname: &r{nickname}"
+  info-color: "&7Color: &r{color}"
+  info-mode: "&7Source: &f{mode}"
+  info-updated: "&7Updated: &f{time}"
+  info-footer: "&6================================"
+  force-download-start: "&eDownloading driver &f{driver}&e, please wait..."
+  force-download-ok: "&aDriver &f{driver}&a downloaded to: &f{path}"
+  force-download-fail: "&cFailed to download &f{driver}&c: &f{reason}"
+  force-download-all-ok: "&aAll drivers have been downloaded."
+  debug-on: "&aDebug mode enabled."
+  debug-off: "&cDebug mode disabled."
+
+# ---------- Help ----------
+help:
+  header: "&6======== &bNCNick &6========"
+  entry-open: "&e/nc &7- Open the nickname menu"
+  entry-set: "&e/nc set <nickname> &7- Set your nickname directly"
+  entry-color: "&e/nc color &7- Open the color menu"
+  entry-remove: "&e/nc remove &7- Clear your nickname"
+  entry-info: "&e/nc info &7- View your nickname info"
+  entry-help: "&e/nc help &7- Show this help"
+  admin-header: "&6======== &bNCNick Admin Help &6========"
+  admin-gui: "&e/nca &7- Open the player management menu"
+  admin-set: "&e/nca set <player> <nickname> &7- Set a player's nickname"
+  admin-color: "&e/nca color <player> <color> &7- Set nickname color (&7&/&#RRGGBB&7)"
+  admin-resetcolor: "&e/nca resetcolor <player> &7- Reset nickname color"
+  admin-clear: "&e/nca clear <player> &7- Clear a player's nickname"
+  admin-info: "&e/nca info <player> &7- View a player's nickname details"
+  admin-list: "&e/nca list [page] &7- List all nicknames"
+  admin-driver: "&e/nca driver [status|download] &7- Manage database drivers"
+  admin-debug: "&e/nca debug [on|off] &7- Toggle debug mode"
+  admin-reload: "&e/nca reload &7- Reload config and language files"
+  footer: "&6================================"
+
+# ---------- Color GUI ----------
+color:
+  title-main: "&eNickname Color"
+  title-solid: "&eChoose a Solid Color"
+  title-gradient-from: "&eGradient - Start Color"
+  title-gradient-to: "&eGradient - End Color"
+  title-preview: "&ePreview"
+  item-solid: "&aSolid Color"
+  item-solid-lore:
+    - "&7Set a single color for your nickname"
+    - "&7&e{count} &7colors available"
+  item-gradient: "&dGradient"
+  item-gradient-lore:
+    - "&7Set a two-color gradient for your nickname"
+    - "&7Smoothly fades from the start to the end color"
+  item-preview: "&ePreview"
+  item-preview-lore:
+    - "&7Current: &r{color}"
+    - "&7Click to see the actual effect"
+  item-buy: "&aConfirm Purchase"
+  item-buy-lore:
+    - "&7Price: &e{price}"
+    - "&7Balance: &e{balance}"
+    - "&aClick to confirm the purchase"
+  item-buy-lore-noperm:
+    - "&7Price: &e{price}"
+    - "&cInsufficient balance"
+  item-cancel: "&cCancel"
+  item-back: "&eBack"
+  item-reset: "&cReset to default color"
+  item-reset-lore:
+    - "&7Remove the custom color from your nickname"
+  selected-from: "&7Start color: &r{color}"
+  selected-to: "&7End color: &r{color}"
+  hint-pick: "&7Click to choose this color"
+  preview-name: "&f{name} &7| see the chat for the actual effect"
+  preview-chat: "&a[Preview] &rYour nickname will look like: &r{nickname}"
+  no-color-permission: "&cYou lack permission to use nickname colors (need &e{permission}&c)."
+  none: "&7Default (no color)"
+
+# ---------- Admin GUI ----------
+admin-gui:
+  title-main: "&cNickname Admin - Players"
+  title-player: "&cManage: {player}"
+  title-confirm: "&cConfirm Action"
+  item-player: "&f{player}"
+  item-player-lore:
+    - "&7Nickname: &r{nickname}"
+    - "&7Color: &r{color}"
+    - "&7Source: &f{mode}"
+    - ""
+    - "&eClick to manage this player"
+  item-empty: "&7None"
+  item-set-name: "&aSet Nickname"
+  item-set-name-lore:
+    - "&7Set a new nickname for this player"
+    - "&7Current: &r{nickname}"
+  item-set-color: "&aSet Color"
+  item-set-color-lore:
+    - "&7Set the nickname color"
+    - "&7Current: &r{color}"
+  item-reset-color: "&eReset Color"
+  item-reset-color-lore:
+    - "&7Remove this player's nickname color"
+  item-clear: "&cClear Nickname"
+  item-clear-lore:
+    - "&7Permanently delete this player's nickname data"
+  item-prev: "&ePrevious Page"
+  item-next: "&eNext Page"
+  item-close: "&cClose"
+  item-info: "&ePlayer Info"
+  item-info-lore:
+    - "&7Real ID: &f{name}"
+    - "&7UUID: &f{uuid}"
+    - "&7Source: &f{mode}"
+  item-refresh: "&aRefresh List"
+  item-search: "&eSearch Player"
+  search-prompt: "&eType the player name in chat (or 'cancel' to abort)"
+  search-cancelled: "&cSearch cancelled."
+  search-no-result: "&cNo matching player found."
+  confirm-clear: "&cClear &e{player}&c's nickname? This cannot be undone!"
+  confirm-yes: "&aConfirm"
+  confirm-no: "&cCancel"
+  action-done: "&aAction completed."
+  prompt-nickname: "&eType the new nickname in chat (or 'cancel' to abort)"
+  prompt-color: "&eType a color code, e.g. &a&a&e / &6&c&e / &e&#FF5555 &7(or 'cancel')"
+  invalid-color: "&cInvalid color code! Try &a, &c or &#RRGGBB."
+
+# ---------- Experimental ----------
+experimental:
+  disabled: "&7Experimental features are disabled."
+  tab-applied: "&7Vanilla TAB display is now managed by NCNick."
+  nametag-applied: "&7Vanilla nametag display is now managed by NCNick."
+  chat-applied: "&7Vanilla chat display is now managed by NCNick."
+  packetevents-missing: "&7PacketEvents not found; using native API mode instead."
+
+# ---------- Driver ----------
+driver:
+  downloading: "&eDownloading &f{driver}&e from &f{source}&e..."
+  download-ok: "&aDriver &f{driver}&a downloaded successfully."
+  download-retry: "&eSource &f{source}&e failed ({reason}); trying the next source..."
+  download-fail: "&cAll sources failed for &f{driver}&c. Database features are unavailable."
+  loaded: "&aDriver loaded: &f{driver}"
+  load-fail: "&cFailed to load driver &f{driver}&c - {reason}"
+  no-driver: "&cNo database driver found and auto-download failed. Please download &f{driver}&c manually into &f{path}&c."
+  status-header: "&6===== Database Driver Status ====="
+  status-entry: "&7{driver}: &f{state} &7({path})"
+  state-ok: "&aReady"
+  state-missing: "&cMissing"
+
+# ---------- Payment Selection ----------
+pay:
+  title: "&8Choose Payment Method"
+  item-free: "&aSet for Free"
+  item-free-lore:
+    - "&7You have permission &e{permission}"
+    - "&aYou can set this nickname for free"
+    - ""
+    - "&aClick to set for free"
+  item-coins: "&6Buy with Coins &7(default)"
+  item-coins-lore:
+    - "&7Price: &e{price} &7coins"
+    - "&7Balance: &e{balance} &7coins"
+    - ""
+    - "{action}"
+  item-points: "&aBuy with Points"
+  item-points-lore:
+    - "&7Price: &e{price} &7points"
+    - "&7Balance: &e{balance} &7points"
+    - ""
+    - "{action}"
+  action-buy: "&aClick to buy"
+  action-insufficient: "&cInsufficient balance"
+  item-info: "&e{name}"
+  item-info-lore:
+    - "&7Nickname: &f{nickname}"
+    - ""
+    - "&7Please choose a payment method"
+  item-cancel: "&cCancel"
