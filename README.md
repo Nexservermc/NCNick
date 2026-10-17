@@ -87,7 +87,7 @@
 
 ## 📖 文档
 
-完整使用文档（安装、配置、命令、权限、变量、存储、FAQ、架构）见 **[WIKI](./wiki/Home.md)**。
+完整使用文档（安装、配置、命令、权限、变量、存储、FAQ、架构）见 **[WIKI](https://github.com/Nexservermc/NCNick/wiki)**。
 
 常用命令速查：
 
@@ -128,4 +128,3 @@ mvn clean package
 ## 📄 许可证
 
 本项目基于 **GNU General Public License v3.0** 发布，详见 [LICENSE](./LICENSE)。
-
