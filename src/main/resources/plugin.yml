@@ -3,7 +3,7 @@ version: 2.0.0
 main: com.ncnick.NCNick
 # 注意：刻意不声明 api-version。
 # 声明 api-version: 1.13 会导致 1.8 - 1.12 服务端直接拒绝加载本插件；
-# 省略该字段时，Bukkit 按 legacy 方式加载，1.8 - 1.21.11 全版本均可运行。
+# 省略该字段时，Bukkit 按 legacy 方式加载，1.8+ 全版本均可运行。
 authors: [xiaotian_xt, Nice_Leo_]
 description: 中文昵称插件 —— 简繁中文昵称、双占位符、颜色 GUI、全服唯一、MySQL 跨服同步
 website: ""
@@ -21,20 +21,178 @@ commands:
     permission: ncnick.admin
     permission-message: "§c你没有权限执行此命令。"
 
+# ============================================================
+#  权限节点
+#
+#  分层设计，便于 LuckPerms 等插件按前缀批量管理：
+#    · ncnick.*            全部权限
+#    · ncnick.admin.*      全部管理权限
+#    · ncnick.color.*      全部颜色权限
+#    · ncnick.bypass.*     全部豁免权限
+#
+#  父节点通过 children 蕴含子节点；插件内部还会额外识别
+#  逐级通配符（见 com.ncnick.util.Permissions#has），
+#  因此即使权限插件不支持 children 也能用 * 授权。
+# ============================================================
 permissions:
-  ncnick.use:
-    description: 允许使用昵称功能
-    default: true
-  ncnick.remove:
-    description: 允许清除自己的昵称
-    default: true
-  ncnick.color:
-    description: 允许为昵称设置自定义颜色
-    default: true
-  ncnick.admin:
-    description: 管理员权限（管理界面与全部管理命令）
-    default: op
+
+  # ---------- 根 ----------
+  ncnick.*:
+    description: 拥有 NCNick 的全部权限（含管理）
+    default: false
     children:
       ncnick.use: true
-      ncnick.remove: true
-      ncnick.color: true
+      ncnick.nickname.set: true
+      ncnick.nickname.remove: true
+      ncnick.color.use: true
+      ncnick.color.solid: true
+      ncnick.color.gradient: true
+      ncnick.color.hex: true
+      ncnick.free: true
+      ncnick.bypass.length: true
+      ncnick.bypass.charset: true
+      ncnick.bypass.unique: true
+      ncnick.bypass.blocked: true
+      ncnick.bypass.cooldown: true
+      ncnick.admin: true
+
+  # ---------- 玩家：基础 ----------
+  ncnick.use:
+    description: 基础使用权限（打开昵称界面）
+    default: true
+    children:
+      ncnick.nickname.set: true
+      ncnick.nickname.remove: true
+
+  ncnick.nickname.set:
+    description: 设置 / 修改自己的昵称
+    default: true
+
+  ncnick.nickname.remove:
+    description: 删除自己的昵称
+    default: true
+
+  # ---------- 玩家：颜色 ----------
+  ncnick.color.use:
+    description: 使用昵称颜色功能的入口权限
+    default: true
+    children:
+      ncnick.color.solid: true
+      ncnick.color.gradient: true
+
+  ncnick.color.solid:
+    description: 使用纯色昵称
+    default: true
+
+  ncnick.color.gradient:
+    description: 使用渐变昵称
+    default: true
+
+  ncnick.color.hex:
+    description: 使用十六进制真彩色（需服务端 1.16+）
+    default: false
+
+  # ---------- 玩家：免费与豁免 ----------
+  ncnick.free:
+    description: 免费设置昵称与颜色（跳过付费）
+    default: false
+
+  ncnick.bypass.*:
+    description: 拥有全部校验豁免权限
+    default: false
+    children:
+      ncnick.bypass.length: true
+      ncnick.bypass.charset: true
+      ncnick.bypass.unique: true
+      ncnick.bypass.blocked: true
+      ncnick.bypass.cooldown: true
+
+  ncnick.bypass.length:
+    description: 跳过昵称长度限制
+    default: false
+
+  ncnick.bypass.charset:
+    description: 跳过昵称字符集限制
+    default: false
+
+  ncnick.bypass.unique:
+    description: 跳过全服唯一性检查
+    default: false
+
+  ncnick.bypass.blocked:
+    description: 跳过屏蔽词检查
+    default: false
+
+  ncnick.bypass.cooldown:
+    description: 跳过设置冷却
+    default: false
+
+  # ---------- 管理员 ----------
+  ncnick.admin:
+    description: 管理员总权限（管理界面与全部管理命令）
+    default: op
+    children:
+      ncnick.admin.gui: true
+      ncnick.admin.set: true
+      ncnick.admin.color: true
+      ncnick.admin.reset: true
+      ncnick.admin.remove: true
+      ncnick.admin.info: true
+      ncnick.admin.list: true
+      ncnick.admin.search: true
+      ncnick.admin.driver: true
+      ncnick.admin.debug: true
+      ncnick.admin.reload: true
+      ncnick.admin.bypass: true
+      # 管理员天然拥有玩家的全部能力
+      ncnick.use: true
+      ncnick.color.use: true
+      ncnick.free: true
+
+  ncnick.admin.gui:
+    description: 打开管理界面
+    default: op
+
+  ncnick.admin.set:
+    description: 设置他人昵称（可使用颜色代码）
+    default: op
+
+  ncnick.admin.color:
+    description: 设置他人昵称颜色
+    default: op
+
+  ncnick.admin.reset:
+    description: 重置他人昵称颜色
+    default: op
+
+  ncnick.admin.remove:
+    description: 删除他人昵称
+    default: op
+
+  ncnick.admin.info:
+    description: 查看他人昵称信息
+    default: op
+
+  ncnick.admin.list:
+    description: 列出所有已设置昵称的玩家
+    default: op
+
+  ncnick.admin.search:
+    description: 按名字搜索玩家
+    default: op
+
+  ncnick.admin.driver:
+    description: 查看驱动状态、强制重新下载
+    default: op
+
+  ncnick.admin.debug:
+    description: 切换调试模式
+    default: op
+
+  ncnick.admin.reload:
+    description: 重载配置与语言文件
+    default: op
+
+  ncnick.admin.bypass:
+    description: 管理员绕过一切校验（长度、字符集、唯一、屏蔽词）
+    default: op

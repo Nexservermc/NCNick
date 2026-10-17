@@ -53,8 +53,20 @@ public final class DriverClassLoader {
     private final File libDir;
     /** 已创建的类加载器，便于关闭时释放文件句柄 */
     private URLClassLoader loader;
-    /** 已成功加载的驱动主类名 */
+    /** 真正从 {@code lib/} 目录加载的驱动主类名 */
     private final List<String> loaded = new ArrayList<String>();
+    /**
+     * 从**服务端 / 其它插件**（父类加载器）继承来的驱动主类名。
+     *
+     * <p>为什么必须区分：{@link URLClassLoader} 默认是<b>父优先</b>委派，
+     * 即使我们只想加载 {@code lib/} 里的 jar，只要 lib/ 里存在**任意**驱动，
+     * 类加载器就会被创建，随后 {@code Class.forName} 会先向父加载器询问 ——
+     * Paper 自带的 MySQL 驱动就这样"混"了进来，被误判为"已从 lib/ 加载"。
+     *
+     * <p>后果：{@code ensureDriver()} 认为驱动已就绪而跳过下载，
+     * 一旦换到不自带该驱动的核心就直接连不上库。
+     */
+    private final List<String> inherited = new ArrayList<String>();
     /** 本插件注册到 DriverManager 的驱动包装器，用于关闭时注销 */
     private final List<Driver> registered = new ArrayList<Driver>();
 
@@ -177,57 +189,73 @@ public final class DriverClassLoader {
 
         int count = 0;
         for (String className : candidates) {
-            if (loaded.contains(className)) {
+            if (loaded.contains(className) || inherited.contains(className)) {
                 continue;
             }
-            if (tryLoad(className)) {
+            Class<?> clazz = loadClassQuietly(className);
+            if (clazz == null) {
+                continue;
+            }
+            // 关键：判断这个类到底是谁加载的。
+            // 只有 getClassLoader() == loader 才是真正来自 lib/ 的 jar；
+            // 否则是父加载器（服务端自带或别的插件）提供的。
+            boolean fromLib = (clazz.getClassLoader() == loader);
+            if (fromLib) {
                 loaded.add(className);
+                registerShim(clazz, className);
                 count++;
-                Debug.log(Debug.GENERAL, "驱动已注册: {}", className);
+                Debug.log(Debug.GENERAL, "驱动已从 lib/ 注册: {}", className);
+            } else {
+                inherited.add(className);
+                Debug.log(Debug.GENERAL,
+                        "驱动来自服务端（非 lib/）: {}（类加载器 {}）",
+                        className, clazz.getClassLoader());
             }
         }
         return count;
     }
 
     /**
-     * 加载并校验单个驱动类。
+     * 尝试加载驱动类（只加载，不注册包装器）。
+     *
+     * @return 加载成功返回 Class，失败返回 null
      */
-    private boolean tryLoad(String className) {
+    private Class<?> loadClassQuietly(String className) {
         try {
             Class<?> clazz = Class.forName(className, true, loader);
-            // 校验确实是 JDBC 驱动
             if (!Driver.class.isAssignableFrom(clazz)) {
-                return false;
+                return null;
             }
-            // 始终注册一个"包装器"到 DriverManager。
-            //
-            // 为什么必须包装（实测结论）：
-            //   DriverManager.getDrivers() 会按**调用方类加载器**过滤驱动。
-            //   真实驱动类由本类的子 URLClassLoader 加载，插件类加载器看不到它，
-            //   因此从插件代码里调用 DriverManager.getConnection() 会报
-            //   "No suitable driver"。
-            //   包装器 DriverShim 的类来自插件类加载器，对 DriverManager 可见，
-            //   由它把调用转发给真实驱动即可绕过该限制。
-            //
-            // 注意：即使真实驱动已在静态块里自我注册，也必须再注册包装器，
-            // 因为那个自我注册的实例对插件类加载器不可见。
-            try {
-                Driver d = (Driver) clazz.getDeclaredConstructor().newInstance();
-                Driver shim = new DriverShim(d);
-                DriverManager.registerDriver(shim);
-                registered.add(shim);
-            } catch (Throwable t) {
-                // 实例化失败时，退而检查是否已有可用驱动
-                Debug.log(Debug.GENERAL, "驱动包装注册失败: {} - {}",
-                        className, t.getMessage());
-            }
-            return true;
+            return clazz;
         } catch (ClassNotFoundException e) {
             // 该驱动不在 lib 目录里，属正常情况
-            return false;
+            return null;
         } catch (Throwable t) {
             Debug.error(Debug.GENERAL, "加载驱动失败: " + className, t);
-            return false;
+            return null;
+        }
+    }
+
+    /**
+     * 为驱动类注册一个对插件类加载器可见的包装器。
+     *
+     * <p>为什么必须包装（实测结论）：
+     * {@code DriverManager.getDrivers()} 会按<b>调用方类加载器</b>过滤驱动。
+     * 真实驱动类由本类的子 URLClassLoader 加载，插件类加载器看不到它，
+     * 因此从插件代码里调用 {@code DriverManager.getConnection()} 会报
+     * "No suitable driver"。包装器 {@link DriverShim} 的类来自插件类加载器，
+     * 对 DriverManager 可见，由它把调用转发给真实驱动即可绕过该限制。
+     */
+    private void registerShim(Class<?> clazz, String className) {
+        try {
+            Driver d = (Driver) clazz.getDeclaredConstructor().newInstance();
+            Driver shim = new DriverShim(d);
+            DriverManager.registerDriver(shim);
+            registered.add(shim);
+        } catch (Throwable t) {
+            // 实例化失败时不影响后续（真实驱动可能已自我注册）
+            Debug.log(Debug.GENERAL, "驱动包装注册失败: {} - {}",
+                    className, t.getMessage());
         }
     }
 
@@ -311,6 +339,16 @@ public final class DriverClassLoader {
     }
 
     /**
+     * 该驱动是否由**服务端或其它插件**提供（而非 lib/）。
+     *
+     * <p>用于在"下载失败但服务端自带"时给出准确提示，
+     * 而不是误以为驱动已正确安装到 lib/。
+     */
+    public boolean isInherited(String mainClass) {
+        return mainClass != null && inherited.contains(mainClass);
+    }
+
+    /**
      * 关闭类加载器，释放 jar 文件句柄并注销驱动。
      *
      * <p>为何必须注销：{@link DriverManager} 会永久持有注册的驱动实例，
@@ -335,6 +373,7 @@ public final class DriverClassLoader {
             loader = null;
         }
         loaded.clear();
+        inherited.clear();
     }
 
     private static void closeQuietly(URLClassLoader l) {

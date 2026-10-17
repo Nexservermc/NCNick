@@ -381,7 +381,7 @@ public class GuiManager {
     /**
      * 打开昵称输入界面（告示牌/铁砧）。
      *
-     * <p>1.8-1.21 通用做法是让玩家在聊天栏输入，
+     * <p>1.8+ 通用做法是让玩家在聊天栏输入，
      * 因为告示牌 GUI 需要额外的库且在各版本表现不一。
      */
     public void openNicknameInput(Player player) {

@@ -29,8 +29,55 @@ import org.bukkit.configuration.file.YamlConfiguration;
  */
 public final class LangManager {
 
-    /** 内置支持的语言 */
-    private static final String[] BUILTIN = new String[]{"zh_CN", "zh_TW", "en_US"};
+    /**
+     * 内置支持的语言。
+     *
+     * <p>新增语言只需两步：
+     * <ol>
+     *   <li>把 {@code <code>.yml} 放进 {@code src/main/resources/lang/}</li>
+     *   <li>在下方数组里登记该语言代码</li>
+     * </ol>
+     * 键结构必须与 {@code zh_CN.yml} 完全一致（自检脚本会校验）。
+     */
+    private static final String[] BUILTIN = new String[]{
+            // ---- 东亚 ----
+            "zh_CN",   // 简体中文
+            "zh_TW",   // 繁體中文
+            "ja_JP",   // 日本語
+            "ko_KR",   // 한국어
+            // ---- 东南亚 ----
+            "vi_VN",   // Tiếng Việt
+            "th_TH",   // ไทย
+            "id_ID",   // Bahasa Indonesia
+            // ---- 南亚 / 中东 ----
+            "ar_SA",   // العربية
+            "he_IL",   // עברית
+            "tr_TR",   // Türkçe
+            // ---- 西欧 ----
+            "en_US",   // English
+            "de_DE",   // Deutsch
+            "fr_FR",   // Français
+            "es_ES",   // Español
+            "pt_BR",   // Português (Brasil)
+            "it_IT",   // Italiano
+            "nl_NL",   // Nederlands
+            // ---- 北欧 ----
+            "sv_SE",   // Svenska
+            "da_DK",   // Dansk
+            "fi_FI",   // Suomi
+            "nb_NO",   // Norsk bokmål
+            // ---- 中东欧 ----
+            "pl_PL",   // Polski
+            "cs_CZ",   // Čeština
+            "sk_SK",   // Slovenčina
+            "hu_HU",   // Magyar
+            "ro_RO",   // Română
+            "bg_BG",   // Български
+            // ---- 东欧 / 南欧 ----
+            "ru_RU",   // Русский
+            "uk_UA",   // Українська
+            "el_GR"    // Ελληνικά
+    };
 
     private final NCNick plugin;
     private final File langDir;
@@ -103,6 +150,9 @@ public final class LangManager {
 
     /**
      * 把 jar 内置的语言文件释放到磁盘（不覆盖已存在的用户文件）。
+     *
+     * <p>使用 {@link #BUILTIN} 列表逐个释放。新增语言时
+     * 只需把 yml 放进 {@code resources/lang/} 并在此列表登记即可。
      */
     private void releaseBuiltins() {
         if (!langDir.isDirectory() && !langDir.mkdirs()) {

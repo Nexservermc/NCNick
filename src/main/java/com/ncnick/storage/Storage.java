@@ -104,4 +104,13 @@ public interface Storage {
 
     /** 存储类型名，用于日志。 */
     String getTypeName();
+
+    /**
+     * 数据实际存放位置，用于启动日志。
+     *
+     * <p>写成具体位置（文件绝对路径 / host:port/db）而不是只写
+     * "SQLite"/"MySQL"，是因为**用错存储类型**是"数据看起来丢了"
+     * 最常见的原因：日志里直接看到路径/主机，一眼就能发现不对。
+     */
+    String describeTarget();
 }

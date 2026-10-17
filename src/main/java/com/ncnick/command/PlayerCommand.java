@@ -238,7 +238,7 @@ public class PlayerCommand implements TabExecutor {
         sender.sendMessage(lang.text("help.footer"));
 
         // 管理员额外提示 /nca 管理入口
-        if (sender.hasPermission("ncnick.admin")) {
+        if (com.ncnick.util.Permissions.isAdmin(sender)) {
             sender.sendMessage(lang.text("help.admin-header"));
             sender.sendMessage(lang.text("help.admin-gui"));
             sender.sendMessage(lang.text("help.footer"));
@@ -254,13 +254,13 @@ public class PlayerCommand implements TabExecutor {
         List<String> out = new ArrayList<String>();
 
         if (args.length == 1) {
-            if (sender.hasPermission("ncnick.use")) {
+            if (com.ncnick.util.Permissions.has(sender, com.ncnick.util.Permissions.USE)) {
                 out.add("open");
                 out.add("set");
                 out.add("color");
                 out.add("info");
             }
-            if (sender.hasPermission("ncnick.remove")) {
+            if (com.ncnick.util.Permissions.has(sender, com.ncnick.util.Permissions.NICKNAME_REMOVE)) {
                 out.add("remove");
             }
             out.add("help");
@@ -288,7 +288,7 @@ public class PlayerCommand implements TabExecutor {
     }
 
     private boolean hasPerm(CommandSender sender, String permission) {
-        if (sender.hasPermission(permission) || sender.hasPermission("ncnick.admin")) {
+        if (sender.hasPermission(permission) || com.ncnick.util.Permissions.isAdmin(sender)) {
             return true;
         }
         sender.sendMessage(plugin.getLang().msg("msg.no-permission"));

@@ -62,6 +62,13 @@ public class MySQLStorage implements Storage {
     }
 
     @Override
+    public String describeTarget() {
+        return plugin.getConfigManager().getMysqlHost() + ":"
+                + plugin.getConfigManager().getMysqlPort() + "/"
+                + plugin.getConfigManager().getMysqlDatabase();
+    }
+
+    @Override
     public boolean isReady() {
         return ready;
     }
@@ -97,6 +104,11 @@ public class MySQLStorage implements Storage {
         // 连接存活检测，避免拿到已断开的连接
         cfg.setValidationTimeout(3000L);
         cfg.setKeepaliveTime(60000L);
+        // idleTimeout 必须**明显小于** maxLifetime，否则 Hikari 会告警并禁用它：
+        //   "idleTimeout is close to or more than maxLifetime, disabling it."
+        // Hikari 默认 idleTimeout=600000，与我们原先的 maxLifetime 相等，
+        // 每次启动都会打这条 WARN。这里显式设为 5 分钟。
+        cfg.setIdleTimeout(300000L);
         cfg.setMaxLifetime(600000L);
         // 明确不使用 SSL（由配置控制，写在 URL 里）
         cfg.addDataSourceProperty("cachePrepStmts", "true");

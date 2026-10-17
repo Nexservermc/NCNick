@@ -44,6 +44,8 @@ public class SQLiteStorage implements Storage {
     private final Object writeLock = new Object();
     private Connection connection;
     private volatile boolean ready = false;
+    /** 本次启动前 db 文件是否不存在（即本次新建了空库） */
+    private boolean fileCreated = false;
 
     public SQLiteStorage(NCNick plugin) {
         this.plugin = plugin;
@@ -54,6 +56,21 @@ public class SQLiteStorage implements Storage {
     @Override
     public String getTypeName() {
         return "SQLite";
+    }
+
+    @Override
+    public String describeTarget() {
+        return dbFile.getAbsolutePath();
+    }
+
+    /**
+     * 本次启动前数据库文件是否**不存在**（即刚建的空库）。
+     *
+     * <p>为空库时插件会打印警告：很可能是配置从 MySQL 误切到了 SQLite，
+     * 此时玩家会以为"昵称数据全丢了"，其实数据还在 MySQL 里。
+     */
+    public boolean wasFileCreated() {
+        return fileCreated;
     }
 
     @Override
@@ -107,6 +124,9 @@ public class SQLiteStorage implements Storage {
      * 建立 SQLite 连接并设置优化参数。
      */
     private Connection openConnection() throws SQLException {
+        // 记录"本次是否新建了数据库文件"——建表之前判断才有意义。
+        // 新建的空库往往意味着用户从 MySQL 误切到了 SQLite。
+        this.fileCreated = !dbFile.exists();
         String url = "jdbc:sqlite:" + dbFile.getAbsolutePath();
         Connection conn = DriverManager.getConnection(url);
         // 自动提交开启，写操作用显式事务包裹

@@ -5,7 +5,7 @@ import org.bukkit.Bukkit;
 /**
  * 服务端版本探测与自适应工具。
  *
- * <p>单 jar 需要兼容 1.8 - 1.21.11，不同版本可用的 API 差异很大。
+ * <p>单 jar 需要兼容 1.8+，不同版本可用的 API 差异很大。
  * 这里集中管理版本判断与能力探测，避免散落在各处。
  */
 public final class VersionUtil {

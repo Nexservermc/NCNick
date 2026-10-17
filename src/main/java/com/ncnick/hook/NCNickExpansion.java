@@ -5,7 +5,6 @@ import com.ncnick.model.NickData;
 import com.ncnick.util.Debug;
 import com.ncnick.util.Msg;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
-import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
@@ -119,29 +118,94 @@ public class NCNickExpansion extends PlaceholderExpansion {
 
             switch (key) {
                 case "nickname":
-                    // 昵称（含颜色）
+                    // 昵称（含颜色，**带占位符前缀**，如 "#小明"）。
+                    //
+                    // 【为什么带前缀】昵称是纯文字，若不与正文区分开，
+                    // 读者无法判断"小明"是人名还是普通词语。
+                    // 前缀（默认 #）就是为此存在的。
+                    //
+                    // 【无昵称时回退真实 ID】空串会让聊天里的名字位置变空白
+                    // （"<  > 你好"），因此无昵称时返回真实 ID。
+                    //
+                    // 需要**不带前缀**的纯昵称，请用 %ncnick_nickname_plain%
+                    // 需要**严格空**语义，请用 %ncnick_nickname_empty%
+                    return active
+                            ? Msg.color(plugin.getConfigManager().getCustomPrefix()
+                                    + data.getColoredNickname())
+                            : safeName(player);
+
+                case "nickname_plain":
+                case "nickname-plain":
+                    // 纯昵称，不带占位符前缀（如 "小明"）
+                    return active ? data.getColoredNickname() : safeName(player);
+
+                case "nickname_empty":
+                case "nickname-strict":
+                    // 严格语义：无昵称时返回空串（供需要判断的场景使用）
                     return active ? data.getColoredNickname() : "";
 
                 case "raw":
                 case "rawnickname":
-                    // 昵称（纯文本，无颜色）
-                    return active ? data.getNickname() : "";
+                    // 昵称纯文本（无颜色），同样带前缀
+                    return active
+                            ? plugin.getConfigManager().getCustomPrefix()
+                                    + Msg.stripColor(data.getNickname())
+                            : safeName(player);
+
+                case "raw_plain":
+                case "raw-plain":
+                    // 纯文本、无前缀
+                    return active ? Msg.stripColor(data.getNickname()) : safeName(player);
+
+                case "raw_empty":
+                case "raw-strict":
+                    return active ? Msg.stripColor(data.getNickname()) : "";
 
                 case "display":
+                    // 昵称部分（前缀 + 昵称），**不含真实 ID**。
+                    //
+                    // 【为什么不含真实 ID】display 的用途是"替换名字槽"，
+                    // 而名字槽（TAB、聊天 <%1$s>、计分板）本身已在别处
+                    // 提供真实 ID。若这里再拼一次，就会出现两个名字：
+                    //     Steve Steve#小明
+                    // 因此 display 只输出 "#小明"，放哪儿都只有一个名字。
+                    //
+                    // 需要"真实ID+昵称"请看 %ncnick_fullname%
+                    return active
+                            ? Msg.color(plugin.getConfigManager().getCustomPrefix()
+                                    + data.getColoredNickname())
+                            : safeName(player);
+
                 case "fullname":
-                    // 完整显示名（如 Steve#小明）
-                    if (!active) {
-                        String n = player.getName();
-                        return n == null ? "" : n;
-                    }
-                    Player online = Bukkit.getPlayer(player.getUniqueId());
-                    if (online != null && online.isOnline()) {
-                        return Msg.color(plugin.getNickManager().buildChatName(online));
-                    }
-                    // 离线玩家：用配置模板手工拼
-                    return Msg.color(Msg.fill(
-                            plugin.getConfigManager().getChatFormat(),
-                            buildVars(player.getName(), data.getColoredNickname())));
+                case "full_display":
+                    // 完整显示名：真实 ID + 前缀 + 昵称（如 Steve#小明）
+                    //
+                    // ⚠️ 只在**不会重复真实 ID** 的位置使用，
+                    //    例如独立的信息牌，而不是聊天/TAB 的名字槽。
+                    return active
+                            ? Msg.color(player.getName()
+                                    + plugin.getConfigManager().getCustomPrefix()
+                                    + data.getColoredNickname())
+                            : safeName(player);
+
+                case "display_empty":
+                case "display-strict":
+                case "nickname_prefix_empty":
+                    // 前缀 + 昵称；**无昵称时返回空串**。
+                    //
+                    //   有昵称 → "#小明"
+                    //   无昵称 → ""
+                    //
+                    // 与 %ncnick_display% 的唯一区别是无昵称时的行为：
+                    // display 回退真实 ID（名字槽不能空），
+                    // display_empty 返回空（用于"没昵称就整行不显示"）。
+                    //
+                    // 与 %ncnick_nickname_empty% 的区别：那个**不带**前缀
+                    // 返回 "小明"，这个带前缀返回 "#小明"。
+                    return active
+                            ? Msg.color(plugin.getConfigManager().getCustomPrefix()
+                                    + data.getColoredNickname())
+                            : "";
 
                 case "color":
                     return (active && data.hasColor())
@@ -180,11 +244,16 @@ public class NCNickExpansion extends PlaceholderExpansion {
         return true;
     }
 
-    /** 构造填充变量表。 */
-    private static java.util.Map<String, String> buildVars(String name, String nickname) {
-        java.util.Map<String, String> m = new java.util.HashMap<String, String>();
-        m.put("name", name == null ? "" : name);
-        m.put("nickname", nickname == null ? "" : nickname);
-        return m;
+    /**
+     * 取玩家真实 ID，任何情况下都不返回 null。
+     *
+     * <p>占位符回退用：聊天、计分板等场景下"空字符串"通常不是想要的结果。
+     */
+    private static String safeName(OfflinePlayer player) {
+        if (player == null) {
+            return "";
+        }
+        String name = player.getName();
+        return name == null ? "" : name;
     }
 }

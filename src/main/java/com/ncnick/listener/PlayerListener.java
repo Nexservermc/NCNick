@@ -4,6 +4,7 @@ import com.ncnick.NCNick;
 import com.ncnick.gui.GuiManager;
 import com.ncnick.model.NickData;
 import com.ncnick.util.Debug;
+import com.ncnick.util.Permissions;
 import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -163,9 +164,19 @@ public class PlayerListener implements Listener {
             case COLOR_MAIN: {
                 int size = top.getSize();
                 if (slot == 11) {
-                    gui.openColorPicker(player, false, false);
+                    // 纯色：需要 ncnick.color.solid
+                    if (Permissions.has(player, Permissions.COLOR_SOLID)) {
+                        gui.openColorPicker(player, false, false);
+                    } else {
+                        player.sendMessage(plugin.getLang().msg("msg.no-permission"));
+                    }
                 } else if (slot == 15) {
-                    gui.openColorPicker(player, true, false);
+                    // 渐变：需要 ncnick.color.gradient
+                    if (Permissions.has(player, Permissions.COLOR_GRADIENT)) {
+                        gui.openColorPicker(player, true, false);
+                    } else {
+                        player.sendMessage(plugin.getLang().msg("msg.no-permission"));
+                    }
                 } else if (slot == size - 9) {
                     // 返回：最后一行最左（与 ColorGui 放置位置一致）
                     gui.openMain(player);

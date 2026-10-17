@@ -145,6 +145,23 @@ public class NCNick extends JavaPlugin {
             // 忽略
         }
 
+        // ⚠️ 关键顺序：必须**先等异步写库跑完**，再取消任务。
+        //
+        // cancelTasks() 会取消所有"已排队但还没开始"的异步任务。
+        // 若此时正好有一次保存排在队列里（玩家刚改完昵称就关服），
+        // 那次保存会被直接丢掉 —— 数据凭空消失。
+        //
+        // 放在最前面：此时调度器还完整可用，排队的任务能正常执行。
+        try {
+            if (nickManager != null) {
+                if (!nickManager.awaitPendingWrites(3000L)) {
+                    getLogger().warning("仍有未完成的数据库写入，已等待 3 秒后继续。");
+                }
+            }
+        } catch (Throwable ignored) {
+            // 忽略
+        }
+
         // 停止任务
         try {
             if (syncTask != null) {
@@ -236,9 +253,16 @@ public class NCNick extends JavaPlugin {
         boolean driverOk = ensureDriver(driverKey);
 
         if (!driverOk) {
-            // MySQL 驱动拿不到时，若 SQLite 可用则回退，避免整个插件不可用
-            if ("mysql".equals(type) && ensureDriver("sqlite")) {
-                getLogger().warning("MySQL 驱动不可用，已回退到 SQLite 存储。");
+            // MySQL 驱动拿不到时，可选地回退到 SQLite。
+            //
+            // 默认**不回退**：回退会建一个空的 data.db，
+            // 让玩家以为数据丢了，且期间的新改动都写进了错误的地方。
+            // 宁可停用插件并说清原因，也不产生错误数据。
+            if ("mysql".equals(type) && canFallbackToSqlite()
+                    && ensureDriver("sqlite")) {
+                getLogger().warning("MySQL 驱动不可用，已回退到 SQLite 存储。"
+                        + "注意：数据写入 SQLite，不是你配置的 MySQL；"
+                        + "请把驱动放入 " + driverManager.libPath() + " 后重启。");
                 return createStorage("sqlite");
             }
             getLogger().severe("无法获取 " + driverKey + " 数据库驱动，插件将停用。");
@@ -262,10 +286,15 @@ public class NCNick extends JavaPlugin {
      */
     private boolean ensureDriver(String driverKey) {
         if (isDriverSelfLoaded(driverKey)) {
-            Debug.log(Debug.GENERAL, "驱动 {} 已由本插件加载，无需下载", driverKey);
+            Debug.log(Debug.GENERAL, "驱动 {} 已由本插件从 lib/ 加载", driverKey);
             return true;
         }
         if (!configManager.isDriverAutoDownload()) {
+            if (isDriverInherited(driverKey)) {
+                getLogger().warning(driverKey + " 驱动来自服务端（lib/ 中没有）。"
+                        + "已关闭自动下载，暂可运行，但换核心后可能连不上数据库。");
+                return true;
+            }
             getLogger().warning("缺少 " + driverKey + " 驱动，且已关闭自动下载。");
             return false;
         }
@@ -273,8 +302,26 @@ public class NCNick extends JavaPlugin {
         boolean ok = driverManager.ensureAvailable(driverKey);
         if (ok) {
             getLogger().info(driverKey + " 驱动下载完成。");
+            return true;
         }
-        return ok;
+        // 下载失败：若服务端自带同款驱动，仍可先用起来，但必须说清楚风险
+        if (isDriverInherited(driverKey)) {
+            getLogger().warning(driverKey + " 驱动下载失败，暂用服务端自带的驱动。"
+                    + "建议手动下载放入 " + driverManager.libPath()
+                    + "，否则换核心后可能无法连接数据库。");
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 驱动是否由服务端或其它插件提供（非 lib/）。
+     */
+    private boolean isDriverInherited(String driverKey) {
+        com.ncnick.driver.DriverArtifact artifact =
+                driverManager.getArtifact(driverKey);
+        return artifact != null && driverManager.getClassLoader()
+                .isInherited(artifact.getMainClass());
     }
 
     /**
@@ -288,7 +335,51 @@ public class NCNick extends JavaPlugin {
     }
 
     /**
-     * 创建并初始化指定类型的存储，失败时回退到 SQLite。
+     * 若本次启动新建了**空**的 SQLite 库，记一条调试日志。
+     *
+     * <h3>为什么保留这条记录</h3>
+     * 从旧版升级时配置被拆成多个文件，{@code storage.yml} 是新建的，
+     * 默认 {@code sqlite}。老用户原本在 {@code config.yml} 里写的是
+     * {@code storage.type: mysql}，于是插件悄悄换了存储，
+     * 去读一个刚创建的空 {@code data.db} —— 现象是"昵称数据全没了"，
+     * 但数据其实还在 MySQL 里。这条记录是排查该问题的第一线索。
+     *
+     * <h3>为什么不打印到控制台</h3>
+     * 正常单服用户第一次启动也会新建 data.db，那不是错误。
+     * 打到控制台会让每次首启都出现一条吓人的警告，
+     * 因此改为仅在 {@code debug.enabled: true} 时输出。
+     */
+    private void noteFreshDatabase() {
+        try {
+            if (!(storage instanceof SQLiteStorage)) {
+                return;
+            }
+            SQLiteStorage sql = (SQLiteStorage) storage;
+            if (!sql.wasFileCreated()) {
+                return;
+            }
+            Debug.log(Debug.GENERAL,
+                    "本次新建了空数据库 {}（若原本用 MySQL，"
+                            + "请把 storage.yml 的 storage-type 改为 mysql 后重启）",
+                    sql.describeTarget());
+        } catch (Throwable ignored) {
+            // 记录失败不影响启动
+        }
+    }
+
+    /**
+     * 是否允许 MySQL 失败时回退到 SQLite（由 storage.yml 控制，默认 false）。
+     */
+    private boolean canFallbackToSqlite() {
+        try {
+            return configManager != null && configManager.isFallbackToSqlite();
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    /**
+     * 创建并初始化指定类型的存储，失败时按配置决定是否回退到 SQLite。
      *
      * @param type 存储类型（mysql / sqlite）
      * @return 是否成功
@@ -302,6 +393,7 @@ public class NCNick extends JavaPlugin {
         try {
             created.init();
             storageReady = true;
+            noteFreshDatabase();
             return true;
         } catch (Throwable t) {
             getLogger().severe("存储初始化失败: " + t.getMessage());
@@ -317,8 +409,10 @@ public class NCNick extends JavaPlugin {
             }
             storage = null;
 
-            // 只有 MySQL 才回退到 SQLite
-            if (!"mysql".equals(type)) {
+            // 只有 MySQL 且**允许回退**时才改用 SQLite
+            if (!"mysql".equals(type) || !canFallbackToSqlite()) {
+                getLogger().severe("存储不可用，插件将停用。修好上面的问题后重启即可，"
+                        + "期间不会写入任何错误数据。");
                 return false;
             }
             if (!ensureDriver("sqlite")) {
@@ -355,36 +449,6 @@ public class NCNick extends JavaPlugin {
             return false;
         }
         return driverManager.getClassLoader().isAvailable(artifact.getMainClass());
-    }
-
-    /**
-     * 描述当前存储驱动的来源与状态，用于启动摘要。
-     *
-     * <p>输出示例：
-     * <pre>
-     *   驱动    MySQL · 来自 lib/          （本插件自己下载的）
-     *   驱动    MySQL · 来自服务端         （服务端自带，未落盘到 lib/）
-     *   驱动    MySQL · 缺失               （不可用）
-     * </pre>
-     */
-    private String describeDriver() {
-        String type = storage == null ? configManager.getStorageType()
-                : storage.getTypeName().toLowerCase();
-        String key = type.startsWith("mysql") ? "mysql" : "sqlite";
-        com.ncnick.driver.DriverArtifact artifact = driverManager.getArtifact(key);
-        String label = "mysql".equals(key) ? "MySQL" : "SQLite";
-
-        if (artifact == null) {
-            return label + " · 未定义";
-        }
-        if (driverManager.getClassLoader().isSelfLoaded(artifact.getMainClass())) {
-            return label + " · 来自 lib/";
-        }
-        if (driverManager.getClassLoader().isAvailable(artifact.getMainClass())) {
-            // 能看见但不在 lib/ —— 服务端或其它插件提供的
-            return label + " · 来自服务端（未下载到 lib/）";
-        }
-        return label + " · 缺失";
     }
 
     /**
@@ -477,18 +541,19 @@ public class NCNick extends JavaPlugin {
         // 第一行：版本与耗时
         log.info("已启用 · " + VersionUtil.describe() + " · " + elapsedMs + "ms");
 
-        // 以下每行一个功能
-        log.info("  存储    " + storage.getTypeName());
-        log.info("  驱动    " + describeDriver());
-        log.info("  支付    " + describePayments());
-        log.info("  字符集  " + describeCharset());
-        log.info("  唯一性  " + (configManager.isUniqueEnabled() ? "开启" : "关闭"));
+        // 以下每行一个功能，格式统一为「标签: 值」。
+        // 刻意顶格、不用空格对齐 —— 服务器日志里便于 grep，
+        // 也不会因为补空格在窄窗口下换行错位。
+        log.info("存储: " + storage.getTypeName());
+        log.info("支付: " + describePayments());
+        log.info("字符集: " + describeCharset());
+        log.info("唯一性: " + (configManager.isUniqueEnabled() ? "开启" : "关闭"));
 
         if (configManager.isExperimentalEnabled()) {
-            log.info("  实验性  " + experimentalManager.getActualMode());
+            log.info("实验性: " + experimentalManager.getActualMode());
         }
         if (Debug.isEnabled()) {
-            log.info("  调试    开启（排查完请关闭）");
+            log.info("调试: 开启（排查完请关闭）");
         }
     }
 

@@ -1,383 +1,61 @@
 # ============================================================
-#  NCNick 中文昵称插件  ——  主配置文件
+#  NCNick · 主配置
 #  作者：xiaotian_xt / Nice_Leo_
-#  兼容：Minecraft 1.8 - 1.21.11（Spigot / Paper / 及其衍生核心）
+#  兼容：Minecraft 1.8+（Spigot / Paper / 衍生核心）
 #
-#  显示效果说明：
-#    头顶 / TAB : 玩家ID#昵称      （由 display.nametag-format 控制）
-#    聊天       : #昵称            （由 display.chat-format 控制）
+#  本插件把配置按功能拆分为多个文件，便于维护：
+#    config.yml          ← 你在这里（版本、语言、总开关）
+#    validation.yml      昵称校验（字符集、长度、屏蔽词）
+#    economy.yml         金融（价格、支付方式）
+#    display.yml         显示格式（聊天/TAB/头顶/占位符）
+#    storage.yml         存储与驱动下载
+#    experimental.yml    实验性功能
+#    gui.yml             界面外观
+#    debug.yml           调试
 #
-#  占位符变量（在 display 各格式中可用）：
-#    {name}      玩家真实 ID
-#    {nickname}  玩家自定义昵称（含颜色）
-#    {prefix}    自定义占位符字符串（见 display.custom-prefix）
+#  所有文件都支持 /nca reload 热重载。
+#  缺失的键会自动回退到插件内置默认值，不会因此报错。
 # ============================================================
 
 config-version: 2
 
 # ============================================================
-#  语言文件
+#  语言
 # ============================================================
-# 可选值：zh_CN（简体中文） / zh_TW（繁體中文） / en_US（English）
-# 语言文件位于 plugins/NCNick/lang/，可自行修改；
-# 缺失的键会自动回退到插件内置默认值。
-# 修改后执行 /nca reload 即可生效。
+# 内置 30 种语言，语言文件位于 plugins/NCNick/lang/
+#
+#   【东亚】  zh_CN 简体中文   zh_TW 繁體中文   ja_JP 日本語   ko_KR 한국어
+#   【东南亚】vi_VN Tiếng Việt  th_TH ไทย      id_ID Bahasa Indonesia
+#   【中东】  ar_SA العربية    he_IL עברית     tr_TR Türkçe
+#   【西欧】  en_US English    de_DE Deutsch   fr_FR Français
+#             es_ES Español    it_IT Italiano  nl_NL Nederlands
+#             pt_BR Português (Brasil)
+#   【北欧】  sv_SE Svenska     da_DK Dansk     fi_FI Suomi      nb_NO Norsk
+#   【中东欧】pl_PL Polski      cs_CZ Čeština   sk_SK Slovenčina hu_HU Magyar
+#             ro_RO Română      bg_BG Български
+#   【东欧】  ru_RU Русский     uk_UA Українська  el_GR Ελληνικά
+#
+# 也可自行新增：把 <代码>.yml 放进 lang/ 并在 LangManager.BUILTIN 登记
 language: zh_CN
 
 # ============================================================
-#  一、昵称字符规则
+#  功能总开关
 # ============================================================
-validation:
-  # 昵称长度（按可见字符计算，颜色代码不计入）
-  min-length: 1
-  max-length: 10
-
-  # ----------------------------------------------------------
-  #  可用字符配置 —— 默认只允许中文（简体 + 繁体）
-  # ----------------------------------------------------------
-  # 每个类别可单独开关。全部关闭时，字符集为空 -> 任何人都无法设置昵称，
-  # 此时会在控制台输出警告，请至少开启一类。
-  charset:
-    # 简体中文（常用字 + 扩展）
-    simplified-chinese:
-      enabled: true
-      # 允许的字符范围（Unicode 区间，使用 \uXXXX 形式，逗号分隔）
-      ranges:
-        - "\\u4E00-\\u9FFF"     # CJK 统一汉字（基本区）
-        - "\\u3400-\\u4DBF"     # CJK 扩展 A
-        - "\\uF900-\\uFAFF"     # CJK 兼容汉字
-        - "\\u3000-\\u303F"     # CJK 标点（、。等）
-
-    # 繁体中文（含扩展 B 区，覆盖绝大多数繁体字）
-    traditional-chinese:
-      enabled: true
-      ranges:
-        - "\\u4E00-\\u9FFF"     # CJK 统一汉字（繁简共用区）
-        - "\\u3400-\\u4DBF"     # CJK 扩展 A
-        - "\\uF900-\\uFAFF"     # CJK 兼容汉字
-        - "\\u3000-\\u303F"     # CJK 标点
-
-    # 英文字母（默认关闭）
-    latin:
-      enabled: false
-      ranges:
-        - "a-zA-Z"
-
-    # 数字（默认关闭）
-    digits:
-      enabled: false
-      ranges:
-        - "0-9"
-
-    # 日文假名（默认关闭）
-    kana:
-      enabled: false
-      ranges:
-        - "\\u3040-\\u309F"     # 平假名
-        - "\\u30A0-\\u30FF"     # 片假名
-
-    # 韩文谚文（默认关闭）
-    hangul:
-      enabled: false
-      ranges:
-        - "\\uAC00-\\uD7AF"     # 谚文音节
-        - "\\u1100-\\u11FF"     # 谚文字母
-
-    # 符号与空格（默认关闭；开启后允许 空格 . _ - 等）
-    symbols:
-      enabled: false
-      ranges:
-        - " ._-"
-        - "\\u00B7"             # 间隔号 ·
-
-    # 自定义额外字符（始终生效，无论上面开关如何）
-    # 直接填写想额外允许的字符，例如："☆★♡"
-    extra-chars: ""
-
-  # 额外禁止的字符（在黑名单层面强制拦截，优先级高于上方允许列表）
-  # 默认禁止：颜色代码符号、尖括号、引号、反斜杠、花括号等易引发问题的字符。
-  # 花括号必须禁止：昵称中的 {} 会在消息占位符替换时被二次展开。
-  forbidden-chars: "&§<>\"'\\/|{}"
-
-  # 禁止昵称中出现颜色代码（玩家必须通过颜色 GUI 设置颜色）
-  # 注意：管理员用指令设置时不受此限制
-  block-color-codes: true
-
-  # 禁止昵称与真实 ID 相同
-  block-same-as-realname: true
-
-  # 禁止的词汇（命中任意一个即拒绝，不区分大小写）
-  blocked-words: []
-
-  # ----------------------------------------------------------
-  #  颜色权限
-  # ----------------------------------------------------------
-  color:
-    # 是否要求权限才能使用自定义颜色
-    require-permission: false
-    permission: "ncnick.color"
-    # 允许玩家使用的颜色总数上限（0 = 不限制）
-    # 玩家在 GUI 中可见的颜色种类
-    available-colors: all
+# 需要临时关闭某个功能时，把对应项设为 false 即可（无需删配置）。
+features:
+  # 昵称功能总开关（关闭后 /nc 提示功能已停用）
+  nickname: true
+  # 颜色功能总开关
+  color: true
+  # 购买功能总开关（关闭后只能通过权限免费设置）
+  purchase: true
 
 # ============================================================
-#  二、昵称全服唯一
+#  冷却
 # ============================================================
-uniqueness:
-  # 开启后，昵称在全服唯一，不可重复
-  enabled: true
-  # 比较时是否忽略颜色代码（推荐开启：颜色不同但文字相同的昵称也算重复）
-  ignore-color-codes: true
-  # 比较时是否忽略大小写（对中文无影响，主要用于拉丁字母）
-  ignore-case: true
-  # 检查时是否忽略空格
-  ignore-spaces: false
-
-# ============================================================
-#  三、创建与购买模式
-# ============================================================
-modes:
-  # 权限模式：拥有权限的玩家可免费设置
-  permission:
-    enabled: true
-    permission: "ncnick.use"
-    # true = 权限玩家设置的昵称在权限被移除后自动隐藏
-    revoke-on-permission-lost: true
-
-  # 购买模式
-  purchase:
-    enabled: true
-    # 支付方式：
-    #   coins  = 仅金币（Vault / XConomy）
-    #   points = 仅点券（PlayerPoints）
-    #   both   = 两种都支持，由玩家在 GUI 中自行选择（推荐）
-    currency: both
-
-    # 设置中文昵称的价格
-    nickname:
-      price-coins: 10000
-      price-points: 1000
-      # 超过指定字数后额外加价（按超出字数 × 单价累加）
-      extra-fee:
-        enabled: true
-        threshold: 5
-        per-char-coins: 2000
-        per-char-points: 200
-
-    # 设置名字颜色的价格
-    color:
-      # 纯色价格
-      solid:
-        price-coins: 5000
-        price-points: 500
-      # 渐变价格（默认比纯色更贵）
-      gradient:
-        price-coins: 15000
-        price-points: 1500
-
-    # 购买后是否可以再次修改（true = 每次修改都要重新付费）
-    charge-on-modify: true
-
-# ============================================================
-#  四、显示格式（占位符）
-# ============================================================
-display:
-  # 自定义占位符字符串：会替换下方各格式中的 {prefix}
-  # 例如设为 "#" 则 {name}{prefix}{nickname} 显示为 Steve#小明
-  custom-prefix: "#"
-
-  # 玩家未设置昵称时是否仍显示 custom-prefix（一般关闭）
-  prefix-when-no-nickname: false
-
-  # ---- 两种占位符模式 ----
-  # mode 可选值：
-  #   nickname-only  = ① 仅自定义        ->  #小明
-  #   name-nickname  = ② 原ID#自定义     ->  Steve#小明
-  #
-  # 聊天栏显示格式
-  chat-format: "{prefix}{nickname}"
-  # TAB 列表显示格式
-  tab-format: "{name}{prefix}{nickname}"
-  # 头顶悬浮显示格式
-  nametag-format: "{name}{prefix}{nickname}"
-
-  # 无昵称时回退为原版显示
-  fallback-to-vanilla: true
-
-# ============================================================
-#  五、聊天栏名字显示
-# ============================================================
-chat:
-  # 是否给聊天名字加粗
-  bold-name: false
-
-  # 说明：这里刻意不提供 "name-wrapper"（名字包裹符号）选项。
-  #
-  # 原因：Bukkit 的聊天格式由服务端或聊天插件决定（通常是 <%1$s> %2$s），
-  # 本插件只替换其中的「玩家名占位符 %1$s」，不重写整个格式。
-  # 若在此再加一层包裹符号，会出现 <#小明> 这类双重包裹。
-  # 需要改动包裹符号请修改服务端 / 聊天插件的格式配置。
-  #
-  # 另：本插件会把整个聊天格式里的 & 颜色代码转换为 § 颜色，
-  # 因此可以在服务端格式里直接写 '&7[&aVIP&7] &f%1$s &7» &f%2$s'。
-
-# ============================================================
-#  六、实验性功能（默认全部关闭）
-# ============================================================
-#  ⚠ 实验性：直接接管原版显示内容（TAB 列表 / 头顶悬浮 ID / 聊天栏），
-#    在原有显示上做替换，而不是新增一套并行显示，以免与其他插件冲突。
-#
-#    实现方式：通过 Bukkit 原生 API 完成替换——
-#      · TAB   → player.setPlayerListName()
-#      · 头顶  → 记分板队伍前缀/后缀
-#      · 聊天  → 聊天事件格式替换（1.19+ Paper 自动适配 AsyncChatEvent）
-#    无需任何额外依赖即可工作。
-#
-#    全部功能默认关闭。开启后可能与 TAB、ProtocolLib 等显示类插件竞争，
-#    建议先在测试服验证。
-experimental:
-  # 总开关：关闭时，下方三个子开关全部失效
-  enabled: false
-
-  # ---- ① 原版 TAB 列表 ----
-  tab:
-    enabled: false
-    # 显示模式：
-    #   full          = ①全自定义（只显示昵称）
-    #   name-nickname = ②原ID + 自定义（Steve#小明）
-    mode: name-nickname
-
-  # ---- ② 原版玩家头顶悬浮 ID ----
-  nametag:
-    enabled: false
-    mode: name-nickname
-    # 说明：本段刻意不提供 "hide-vanilla"（隐藏原版 ID）选项。
-    #
-    # 原因（平台限制，非本插件缺陷）：
-    #   原版头顶名字 = 队伍前缀 + 玩家实体名 + 队伍后缀，
-    #   其中「玩家实体名」无法通过 Bukkit 记分板 API 移除。
-    #   因此：
-    #     · mode=name-nickname → 头顶显示 "Steve#小明"  ✅ 符合预期
-    #     · mode=full          → 头顶显示 "Steve小明"  ⚠ 原ID仍在
-    #   若需要真正只显示昵称，请改用 experimental.tab（TAB 位置无此限制）。
-    #   插件启动时会在控制台就此限制给出一次提示。
-
-  # ---- ③ 原版聊天栏 ----
-  chat:
-    enabled: false
-    mode: name-nickname
-
-  # 数据包模式：auto = 自动检测, packetevents = 强制使用, none = 强制纯API
-  # 说明：当前版本统一通过原生 API 完成替换，本项保留供将来扩展；
-  #       设置 packetevents 但未安装该插件时会给出提示并继续用 API 模式。
-  packet-mode: auto
-  # 数据包拦截优先级（保留项）
-  packet-priority: 100
-
-# ============================================================
-#  七、数据库与驱动
-# ============================================================
-storage:
-  # 存储类型：sqlite（单服） / mysql（跨服同步）
-  type: sqlite
-
-  mysql:
-    host: "127.0.0.1"
-    port: 3306
-    database: "minecraft"
-    username: "root"
-    password: ""
-    # 表名前缀（仅允许字母、数字、下划线，防止 SQL 注入）
-    table-prefix: "ncnick_"
-    # 连接参数
-    use-ssl: false
-    server-timezone: "Asia/Shanghai"
-    # 连接池
-    pool-size: 6
-    connection-timeout: 8000
-    # 跨服同步：轮询间隔（秒）
-    sync-interval: 5
-
-  sqlite:
-    file: "data.db"
-
-# ------------------------------------------------------------
-#  数据库驱动独立下载
-# ------------------------------------------------------------
-#  插件不再内置数据库驱动，改为在首次使用数据库时自动下载到
-#  plugins/NCNick/lib/ 目录（即插件配置文件夹的前置文件夹）。
-# ------------------------------------------------------------
-driver:
-  # 是否自动下载缺失的驱动
-  auto-download: true
-  # 启用 MySQL 时是否提示重启生效
-  warn-restart: true
-
-  # 驱动下载源（按顺序尝试，前一个超时/失败后自动降级到下一个）
-  # 默认优先国内镜像，最后降级到官方源
-  sources:
-    - name: "阿里云镜像"
-      url: "https://maven.aliyun.com/repository/public"
-    - name: "腾讯云镜像"
-      url: "https://mirrors.cloud.tencent.com/nexus/repository/maven-public"
-    - name: "Maven 官方中央仓库"
-      url: "https://repo1.maven.org/maven2"
-
-  # 单个源的超时时间（毫秒）
-  timeout: 15000
-  # 下载失败重试次数（每个源单独计）
-  retries: 2
-  # 是否在下载时验证文件大小下限（字节），防止下到错误页面
-  min-file-size: 10240
-
-  # 驱动坐标定义（一般无需修改）
-  artifacts:
-    mysql:
-      group: "com.mysql"
-      artifact: "mysql-connector-j"
-      version: "8.0.33"
-      file-name: "mysql-connector-j-8.0.33.jar"
-      main-class: "com.mysql.cj.jdbc.Driver"
-    sqlite:
-      group: "org.xerial"
-      artifact: "sqlite-jdbc"
-      version: "3.45.3.0"
-      file-name: "sqlite-jdbc-3.45.3.0.jar"
-      main-class: "org.sqlite.JDBC"
-
-# ============================================================
-#  八、性能与其他
-# ============================================================
-performance:
-  # 权限掉线检查间隔（秒），0 = 关闭
-  permission-check-interval: 60
-  # 名称缓存刷新间隔（tick），20 tick = 1 秒
-  cache-refresh-ticks: 100
-  # 异步写库队列上限（超出后同步写入，防止丢数据）
-  write-queue-limit: 500
-
-# ============================================================
-#  九、调试
-# ============================================================
-debug:
-  # 调试模式：输出详细日志到控制台与日志文件，默认关闭
-  enabled: false
-  # 细分开关（需 debug.enabled 为 true 才生效）
-  log-sql: false
-  log-cache: false
-  log-packet: false
-  log-validation: false
-
-# ============================================================
-#  十、界面外观
-# ============================================================
-gui:
-  # 主界面标题
-  main-title: "&8昵称设置"
-  # 颜色界面标题
-  color-title: "&8昵称颜色"
-  # 是否使用玻璃板填充空白槽位
-  fill-empty: true
-  # 输入界面用的告示牌/铁砧
-  input-title: "&8输入昵称"
-  input-placeholder: "<在此输入昵称>"
+# 防止玩家频繁改名刷屏。拥有 ncnick.bypass.cooldown 可跳过。
+cooldown:
+  # 设置/修改昵称的冷却（秒），0 = 不限制
+  nickname: 30
+  # 设置颜色的冷却（秒），0 = 不限制
+  color: 10

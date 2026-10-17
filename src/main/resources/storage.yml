@@ -1,0 +1,137 @@
+# ============================================================
+#  NCNick · 存储与数据库驱动
+#
+#  本文件控制「昵称数据存在哪」以及「数据库驱动怎么获取」。
+#
+#  ⚠️ 从 1.x 升级过来？请先确认这里和你原来的设置一致！
+#     旧版把存储写在 config.yml 的 storage: 段里，新版拆到了本文件，
+#     而本文件默认是 sqlite。若你原来用的是 mysql 却不改这里，
+#     插件会去读一个全新的空 data.db，看起来就像"昵称全丢了"。
+#
+#     storage-type 不支持热重载，改完必须重启服务器。
+# ============================================================
+
+# ============================================================
+#  一、存储类型
+# ============================================================
+#   sqlite  单服（默认）—— 数据存于 plugins/NCNick/data.db
+#   mysql   多服        —— 支持跨服同步
+#
+# 注意：修改此项需要**重启服务器**才能生效（连接不能热切换）。
+storage-type: sqlite
+
+# MySQL 连接失败时，是否自动改用 SQLite。
+#
+# ⚠️ 默认 false（推荐）。
+#    因为"回退到 SQLite"会凭空建一个空的 data.db，
+#    玩家看到的是"昵称全没了"，而数据其实还在 MySQL 里 —— 极难排查。
+#    而且回退期间新改的昵称会写进 SQLite，等你修好 MySQL 后又不见了。
+#
+#    设为 false 时：MySQL 连不上 → 插件停用并打印失败原因，
+#    修好配置后重启即可，不会产生任何错误数据。
+#
+#    只有在"MySQL 挂了也要保证玩家能用"的场景才建议设为 true。
+fallback-to-sqlite: false
+
+# ============================================================
+#  二、SQLite
+# ============================================================
+sqlite:
+  # 数据文件名（位于 plugins/NCNick/）
+  # 出于安全考虑只允许字母、数字、下划线、连字符、点，且不能含路径分隔符
+  file: "data.db"
+
+# ============================================================
+#  三、MySQL
+# ============================================================
+mysql:
+  host: "127.0.0.1"
+  port: 3306
+  database: "minecraft"
+  username: "root"
+  password: ""
+
+  # 表名前缀。只允许字母、数字、下划线；超过 24 字符会被拒绝并回退默认值
+  table-prefix: "ncnick_"
+
+  # 是否使用 SSL（本地连接一般关闭）
+  use-ssl: false
+
+  # 服务端时区，影响时间字段解析
+  server-timezone: "Asia/Shanghai"
+
+  # 连接池大小
+  pool-size: 6
+  # 连接超时（毫秒）
+  connection-timeout: 8000
+
+  # 跨服同步轮询间隔（秒）。单服使用 SQLite 时此项无效
+  sync-interval: 5
+
+# ============================================================
+#  四、数据库驱动下载
+# ============================================================
+# 本插件**不内置**数据库驱动（否则 jar 会膨胀到 18MB）。
+# 首次使用时会自动下载到 plugins/NCNick/lib/。
+#
+# 安全说明：出于防止代码注入的考虑，只加载文件名匹配已知驱动包的 jar，
+# 其他文件名会被跳过并在控制台告警。
+driver:
+  # 是否允许自动下载
+  auto-download: true
+
+  # 下载源，按顺序尝试，前一个失败才降级到下一个
+  sources:
+    - name: "阿里云镜像"
+      url: "https://maven.aliyun.com/repository/public"
+    - name: "腾讯云镜像"
+      url: "https://mirrors.cloud.tencent.com/nexus/repository/maven-public"
+    - name: "Maven 官方中央仓库"
+      url: "https://repo1.maven.org/maven2"
+
+  # 单源超时（毫秒）。网络慢可调小以加快降级
+  timeout: 15000
+  # 每个源的重试次数
+  retries: 2
+  # 文件大小下限（字节），防止把错误页面当成 jar 下载
+  min-file-size: 10240
+
+  # 驱动坐标（一般无需修改）
+  artifacts:
+    mysql:
+      group: "com.mysql"
+      artifact: "mysql-connector-j"
+      version: "8.0.33"
+      file-name: "mysql-connector-j-8.0.33.jar"
+      main-class: "com.mysql.cj.jdbc.Driver"
+    sqlite:
+      group: "org.xerial"
+      artifact: "sqlite-jdbc"
+      version: "3.45.3.0"
+      file-name: "sqlite-jdbc-3.45.3.0.jar"
+      main-class: "org.sqlite.JDBC"
+
+# ============================================================
+#  五、离线部署
+# ============================================================
+# 服务器无法联网时：
+#   1. 把 driver.auto-download 设为 false
+#   2. 手动下载驱动放入 plugins/NCNick/lib/
+#   3. /nca reload
+#
+# 下载地址（任选其一，把文件放进 lib/ 即可）：
+#   https://maven.aliyun.com/repository/public/com/mysql/mysql-connector-j/8.0.33/mysql-connector-j-8.0.33.jar
+#   https://maven.aliyun.com/repository/public/org/xerial/sqlite-jdbc/3.45.3.0/sqlite-jdbc-3.45.3.0.jar
+#
+# 查看驱动状态：/nca driver status
+
+# ============================================================
+#  六、性能
+# ============================================================
+performance:
+  # 权限掉线检查间隔（秒），0 = 关闭
+  permission-check-interval: 60
+  # 名称缓存刷新间隔（tick），20 tick = 1 秒
+  cache-refresh-ticks: 100
+  # 异步写库队列上限（超出后同步写入，防止丢数据）
+  write-queue-limit: 500

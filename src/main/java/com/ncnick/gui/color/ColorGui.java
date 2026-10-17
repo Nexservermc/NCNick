@@ -425,7 +425,7 @@ public class ColorGui {
                 "&e效果预览", previewLore));
 
         // ---- 购买按钮（每种支付方式一个） ----
-        List<PayType> payTypes = plugin.getNickManager().availablePayTypes();
+        List<PayType> payTypes = plugin.getNickManager().availablePayTypes(com.ncnick.model.ProductType.COLOR);
         boolean hasPermission = plugin.getConfigManager().isPermissionModeEnabled()
                 && player.hasPermission(plugin.getConfigManager().getPermissionNode());
 
@@ -508,7 +508,7 @@ public class ColorGui {
 
         boolean hasPermission = plugin.getConfigManager().isPermissionModeEnabled()
                 && player.hasPermission(plugin.getConfigManager().getPermissionNode());
-        List<PayType> payTypes = plugin.getNickManager().availablePayTypes();
+        List<PayType> payTypes = plugin.getNickManager().availablePayTypes(com.ncnick.model.ProductType.COLOR);
 
         // 计算各按钮实际槽位
         int freeSlot = hasPermission ? 11 : -1;
@@ -586,7 +586,7 @@ public class ColorGui {
 
     /** 价格文本。 */
     private String priceText(boolean gradient, Player player) {
-        List<PayType> types = plugin.getNickManager().availablePayTypes();
+        List<PayType> types = plugin.getNickManager().availablePayTypes(com.ncnick.model.ProductType.COLOR);
         if (types.isEmpty()) {
             return "不可购买";
         }

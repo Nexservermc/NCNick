@@ -9,6 +9,7 @@ import com.ncnick.model.NickMode;
 import com.ncnick.model.PayType;
 import com.ncnick.util.CharsetFilter;
 import com.ncnick.util.Debug;
+import com.ncnick.util.Permissions;
 import com.ncnick.util.Msg;
 import com.ncnick.util.NicknameNormalizer;
 import java.util.HashMap;
@@ -35,6 +36,20 @@ public class NickManager {
     private final NCNick plugin;
     /** 在线玩家的昵称缓存：UUID -> 数据 */
     private final Map<UUID, NickData> cache = new ConcurrentHashMap<UUID, NickData>();
+
+    /**
+     * 正在进行中的异步写库任务数。
+     *
+     * <h3>为什么需要</h3>
+     * 写库是异步的（不卡主线程）。插件卸载时
+     * {@code onDisable} 会 {@code cancelTasks()}，此时**已排队但还没开跑**
+     * 的异步任务会被直接取消 —— 那次保存就永远不会发生，
+     * 玩家刚设的昵称凭空消失。
+     *
+     * <p>因此在卸载流程里先等这个计数归零，再取消任务、关闭连接。
+     */
+    private final java.util.concurrent.atomic.AtomicInteger pendingWrites =
+            new java.util.concurrent.atomic.AtomicInteger();
     /**
      * 权限判定缓存：UUID -> 是否持有昵称权限。
      *
@@ -107,6 +122,41 @@ public class NickManager {
     public void clearCache() {
         cache.clear();
         Debug.log(Debug.CACHE, "缓存已清空");
+    }
+
+    /**
+     * 等待所有进行中的异步写库完成。
+     *
+     * <p>插件卸载时必须先调用本方法，**再**取消任务和关闭连接，
+     * 否则排队中的保存会被丢弃。详见 {@link #pendingWrites}。
+     *
+     * @param timeoutMs 最长等待毫秒数
+     * @return true 表示已全部写完；false 表示超时仍有未完成
+     */
+    public boolean awaitPendingWrites(long timeoutMs) {
+        long deadline = System.currentTimeMillis() + Math.max(0L, timeoutMs);
+        while (pendingWrites.get() > 0) {
+            if (System.currentTimeMillis() >= deadline) {
+                return false;
+            }
+            try {
+                Thread.sleep(20L);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** 登记一次异步写库开始。 */
+    private void beginWrite() {
+        pendingWrites.incrementAndGet();
+    }
+
+    /** 登记一次异步写库结束（必须在 finally 里调用）。 */
+    private void endWrite() {
+        pendingWrites.decrementAndGet();
     }
 
     /** 当前缓存条目数。 */
@@ -261,20 +311,30 @@ public class NickManager {
 
     /**
      * 计算玩家的 TAB 显示名。
+     *
+     * <p>若模板渲染结果为空（例如 tab-format 只写了 {@code {nickname}}
+     * 而玩家没有昵称），回退到真实 ID —— 名字槽不能是空白。
      */
     public String buildTabName(Player player) {
         String nickname = getActiveNickname(player);
-        return format(plugin.getConfigManager().getTabFormat(),
+        String out = format(plugin.getConfigManager().getTabFormat(),
                 player.getName(), nickname);
+        return out.isEmpty() ? player.getName() : out;
     }
 
     /**
      * 计算玩家的头顶显示名（前缀 + 后缀，受 16 字符限制）。
+     *
+     * <p>注意：原版头顶 = 队伍前缀 + 实体名 + 队伍后缀，
+     * 中间那个实体名无法通过 Bukkit API 移除。
+     * 因此模板里**不应该**再写 {@code {name}}，否则会变成
+     * "Steve" + "Steve#小明" 两个名字。
      */
     public String buildNametagName(Player player) {
         String nickname = getActiveNickname(player);
-        return format(plugin.getConfigManager().getNametagFormat(),
+        String out = format(plugin.getConfigManager().getNametagFormat(),
                 player.getName(), nickname);
+        return out.isEmpty() ? player.getName() : out;
     }
 
     /**
@@ -282,8 +342,9 @@ public class NickManager {
      */
     public String buildChatName(Player player) {
         String nickname = getActiveNickname(player);
-        return format(plugin.getConfigManager().getChatFormat(),
+        String out = format(plugin.getConfigManager().getChatFormat(),
                 player.getName(), nickname);
+        return out.isEmpty() ? player.getName() : out;
     }
 
     // ==========================================================
@@ -367,9 +428,12 @@ public class NickManager {
         }
 
         // ---- 字符集白名单校验 ----
+        // 拥有 ncnick.bypass.charset 的玩家跳过（管理员默认拥有）
         CharsetFilter filter = cfg.getCharsetFilter();
         CharsetFilter.Result charsetResult = filter.validate(sanitized);
-        if (!charsetResult.isValid()) {
+        boolean bypassCharset = player != null
+                && Permissions.canBypass(player, Permissions.BYPASS_CHARSET);
+        if (!charsetResult.isValid() && !bypassCharset) {
             Debug.log(Debug.VALIDATE, "字符集校验失败: 非法字符={}",
                     charsetResult.getInvalidChars());
             return ValidateResult.fail("validate.invalid-char",
@@ -377,10 +441,13 @@ public class NickManager {
         }
 
         // ---- 长度校验（按码点） ----
+        // 拥有 ncnick.bypass.length 的玩家跳过
         int len = charsetResult.getVisibleLength();
         int min = cfg.getMinLength();
         int max = cfg.getMaxLength();
-        if (len < min || len > max) {
+        boolean bypassLength = player != null
+                && Permissions.canBypass(player, Permissions.BYPASS_LENGTH);
+        if (!bypassLength && (len < min || len > max)) {
             return ValidateResult.fail("validate.invalid-length",
                     LangManager.vars("min", String.valueOf(min),
                             "max", String.valueOf(max),
@@ -396,8 +463,11 @@ public class NickManager {
         }
 
         // ---- 敏感词 ----
+        // 拥有 ncnick.bypass.blocked 的玩家跳过
+        boolean bypassBlocked = player != null
+                && Permissions.canBypass(player, Permissions.BYPASS_BLOCKED);
         List<String> blocked = cfg.getBlockedWords();
-        if (blocked != null) {
+        if (blocked != null && !bypassBlocked) {
             String lower = sanitized.toLowerCase();
             for (String word : blocked) {
                 if (word != null && !word.isEmpty()
@@ -422,6 +492,13 @@ public class NickManager {
     public ValidateResult validateUnique(Player player, String raw) {
         ConfigManager cfg = plugin.getConfigManager();
         if (!cfg.isUniqueEnabled()) {
+            return ValidateResult.ok();
+        }
+
+        // 拥有 ncnick.bypass.unique 的玩家跳过唯一性检查（管理员默认拥有）
+        if (player != null
+                && Permissions.canBypass(player, Permissions.BYPASS_UNIQUE)) {
+            Debug.log(Debug.VALIDATE, "玩家 {} 拥有唯一性豁免，跳过检查", player.getName());
             return ValidateResult.ok();
         }
 
@@ -559,10 +636,17 @@ public class NickManager {
         final boolean freeMode = effective == PayType.FREE;
         final String chargeDesc = outcome.desc;
 
+        beginWrite();
         Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
             @Override
             public void run() {
-                final boolean saved = plugin.getStorage().save(data);
+                boolean ok = false;
+                try {
+                    ok = plugin.getStorage().save(data);
+                } finally {
+                    endWrite();
+                }
+                final boolean saved = ok;
                 Bukkit.getScheduler().runTask(plugin, new Runnable() {
                     @Override
                     public void run() {
@@ -619,17 +703,24 @@ public class NickManager {
     }
 
     /**
-     * 按配置解析默认支付方式（玩家未显式选择时）。
+     * 按配置解析指定商品的默认支付方式（玩家未显式选择时）。
+     *
+     * <p>昵称与颜色各自独立：{@code economy.yml} 中
+     * {@code purchase.nickname.currency} 与 {@code purchase.color.currency}
+     * 可分别设为 coins / points / both。
+     *
+     * @param product 商品类型
+     * @return 默认支付方式
      */
-    public PayType resolveDefaultPayType() {
-        String currency = plugin.getConfigManager().getCurrency();
+    public PayType resolveDefaultPayType(com.ncnick.model.ProductType product) {
+        String currency = plugin.getConfigManager().getCurrency(product);
         if ("coins".equals(currency)) {
             return PayType.COINS;
         }
         if ("points".equals(currency)) {
             return PayType.POINTS;
         }
-        // both：优先金币（用户要求"默认直接用金币"）
+        // both：优先金币（默认直接用金币）
         if (plugin.getVaultHook().isEnabled()) {
             return PayType.COINS;
         }
@@ -639,12 +730,20 @@ public class NickManager {
         return PayType.COINS;
     }
 
+    /** 向后兼容：不指定商品时按昵称处理。 */
+    public PayType resolveDefaultPayType() {
+        return resolveDefaultPayType(com.ncnick.model.ProductType.NICKNAME);
+    }
+
     /**
-     * 当前实际可用的支付方式列表（供 GUI 决定显示哪些按钮）。
+     * 指定商品当前实际可用的支付方式（供 GUI 决定显示哪些按钮）。
+     *
+     * @param product 商品类型
+     * @return 可用支付方式列表
      */
-    public java.util.List<PayType> availablePayTypes() {
+    public java.util.List<PayType> availablePayTypes(com.ncnick.model.ProductType product) {
         java.util.List<PayType> out = new java.util.ArrayList<PayType>();
-        String currency = plugin.getConfigManager().getCurrency();
+        String currency = plugin.getConfigManager().getCurrency(product);
         boolean coinsOk = plugin.getVaultHook().isEnabled()
                 && ("coins".equals(currency) || "both".equals(currency));
         boolean pointsOk = plugin.getPlayerPointsHook().isEnabled()
@@ -656,6 +755,11 @@ public class NickManager {
             out.add(PayType.POINTS);
         }
         return out;
+    }
+
+    /** 向后兼容：不指定商品时按昵称处理。 */
+    public java.util.List<PayType> availablePayTypes() {
+        return availablePayTypes(com.ncnick.model.ProductType.NICKNAME);
     }
 
     // ==========================================================
@@ -703,7 +807,8 @@ public class NickManager {
         if (hasPermission && (payType == null || payType == PayType.FREE)) {
             effective = PayType.FREE;
         } else if (payType == null) {
-            effective = resolveDefaultPayType();
+            // 颜色有自己的 currency 配置（purchase.color.currency）
+            effective = resolveDefaultPayType(com.ncnick.model.ProductType.COLOR);
         } else {
             effective = payType;
         }
@@ -735,10 +840,17 @@ public class NickManager {
         final String nickName = data.getNickname();
         final String chargeDesc = outcome.desc;
 
+        beginWrite();
         Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
             @Override
             public void run() {
-                final boolean saved = plugin.getStorage().save(updated);
+                boolean ok = false;
+                try {
+                    ok = plugin.getStorage().save(updated);
+                } finally {
+                    endWrite();
+                }
+                final boolean saved = ok;
                 Bukkit.getScheduler().runTask(plugin, new Runnable() {
                     @Override
                     public void run() {
@@ -1043,10 +1155,17 @@ public class NickManager {
                                 target.getName(), nickname, color,
                                 NickMode.PERMISSION, System.currentTimeMillis());
 
+                        beginWrite();
                         Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
                             @Override
                             public void run() {
-                                final boolean saved = plugin.getStorage().save(data);
+                                boolean ok = false;
+                                try {
+                                    ok = plugin.getStorage().save(data);
+                                } finally {
+                                    endWrite();
+                                }
+                                final boolean saved = ok;
                                 Bukkit.getScheduler().runTask(plugin, new Runnable() {
                                     @Override
                                     public void run() {

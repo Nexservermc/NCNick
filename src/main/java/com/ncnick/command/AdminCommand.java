@@ -10,6 +10,7 @@ import com.ncnick.manager.ValidateResult;
 import com.ncnick.model.ColorPreset;
 import com.ncnick.model.NickData;
 import com.ncnick.util.Debug;
+import com.ncnick.util.Permissions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -54,7 +55,7 @@ public class AdminCommand implements TabExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if (!sender.hasPermission("ncnick.admin")) {
+        if (!com.ncnick.util.Permissions.isAdmin(sender)) {
             sender.sendMessage(plugin.getLang().msg("msg.no-permission"));
             return true;
         }
@@ -73,45 +74,84 @@ public class AdminCommand implements TabExecutor {
             case "gui":
             case "open":
             case "menu":
+                if (!require(sender, Permissions.ADMIN_GUI)) {
+                    return true;
+                }
                 handleGui(sender);
                 return true;
 
             case "set":
+                if (!require(sender, Permissions.ADMIN_SET)) {
+                    return true;
+                }
                 handleSet(sender, args);
                 return true;
 
             case "color":
+                if (!require(sender, Permissions.ADMIN_COLOR)) {
+                    return true;
+                }
                 handleColor(sender, args);
                 return true;
 
             case "resetcolor":
             case "reset":
+                if (!require(sender, Permissions.ADMIN_RESET)) {
+                    return true;
+                }
                 handleResetColor(sender, args);
                 return true;
 
             case "clear":
             case "remove":
             case "delete":
+                if (!require(sender, Permissions.ADMIN_REMOVE)) {
+                    return true;
+                }
                 handleClear(sender, args);
                 return true;
 
             case "info":
+                if (!require(sender, Permissions.ADMIN_INFO)) {
+                    return true;
+                }
                 handleInfo(sender, args);
                 return true;
 
             case "list":
+                if (!require(sender, Permissions.ADMIN_LIST)) {
+                    return true;
+                }
                 handleList(sender, args);
                 return true;
 
+            case "search":
+                // 搜索目前只在管理 GUI 内提供（/nca → 搜索玩家）。
+                // 这里给出提示，而不是留一个静默无效的子命令。
+                if (!require(sender, Permissions.ADMIN_SEARCH)) {
+                    return true;
+                }
+                sender.sendMessage(plugin.getLang().msg("admin.search-in-gui"));
+                return true;
+
             case "driver":
+                if (!require(sender, Permissions.ADMIN_DRIVER)) {
+                    return true;
+                }
                 handleDriver(sender, args);
                 return true;
 
             case "debug":
+                if (!require(sender, Permissions.ADMIN_DEBUG)) {
+                    return true;
+                }
                 handleDebug(sender, args);
                 return true;
 
             case "reload":
+                if (!require(sender, Permissions.ADMIN_RELOAD)) {
+                    return true;
+                }
                 handleReload(sender);
                 return true;
 
@@ -568,6 +608,30 @@ public class AdminCommand implements TabExecutor {
     }
 
     // ==========================================================
+    //  权限辅助
+    // ==========================================================
+
+    /**
+     * 检查子命令权限；不足时提示并返回 false。
+     *
+     * <p>这样可以把权限细分到「每个子命令一个节点」，
+     * 服主可以只给某人 {@code ncnick.admin.info} 而不给修改权限。
+     *
+     * @param sender 发送者
+     * @param node   所需权限节点
+     * @return 是否有权限
+     */
+    private boolean require(CommandSender sender, String node) {
+        if (Permissions.has(sender, node)) {
+            return true;
+        }
+        sender.sendMessage(plugin.getLang().msg("msg.no-permission"));
+        Debug.log(Debug.GENERAL, "权限不足: {} 需要 {}", 
+                sender.getName(), node);
+        return false;
+    }
+
+    // ==========================================================
     //  帮助
     // ==========================================================
 
@@ -593,7 +657,7 @@ public class AdminCommand implements TabExecutor {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command cmd, String alias, String[] args) {
-        if (!sender.hasPermission("ncnick.admin")) {
+        if (!com.ncnick.util.Permissions.isAdmin(sender)) {
             return Collections.emptyList();
         }
 
